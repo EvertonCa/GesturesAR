@@ -60,10 +60,10 @@ class DatabaseGenerator:
                       if (os.path.isfile(os.path.join(objectDirectory, 'labels', f)) and
                           (f.lower().endswith('.txt')))]
             for image in images:
-                shutil.move(os.path.join(objectDirectory, 'images', image),
+                shutil.copy(os.path.join(objectDirectory, 'images', image),
                             os.path.join(self.readyDBDirectory, 'images', image))
             for label in labels:
-                shutil.move(os.path.join(objectDirectory, 'labels', label),
+                shutil.copy(os.path.join(objectDirectory, 'labels', label),
                             os.path.join(self.readyDBDirectory, 'images', label))
             random.shuffle(images)
 
