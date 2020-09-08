@@ -7,7 +7,7 @@ import shutil
 class DatabaseGenerator:
     def __init__(self):
         self.rootDirectory = os.getcwd()
-        self.yoloDirectory = os.path.join(self.rootDirectory, 'YOLO', 'YOLOv4')
+        self.yoloDirectory = os.path.join(self.rootDirectory, 'YOLO', 'YOLOv4', 'darknet')
         self.databaseDirectory = os.path.join(self.yoloDirectory, 'Complete_Database')
         self.readyDBDirectory = os.path.join(self.databaseDirectory, 'Ready_Database')
 
