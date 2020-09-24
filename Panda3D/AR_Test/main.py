@@ -10,21 +10,17 @@ class ARtest(ShowBase):
         ShowBase.__init__(self)
         # ------use OpenCVTexture under linux---------- use WebcamVideo under windows------------
         option = WebcamVideo.getOption(0)  # 0 here is default webcam, 1 would be second cam etc.
-        #self.cursor = option.open()
         self.tex = MovieTexture(option)
         self.tex.setTexturesPower2(0)
-        #self.tex.setKeepRamImage(True)
-        #self.cursor.setupTexture(self.tex)
         print("WebCamVideo based texture infos: -> {0}".format(self.tex))
         videoTextureScale = Vec2(option.getSizeX() / float(self.tex.getXSize()),
                                  option.getSizeY() / float(self.tex.getYSize()))
 
-
-
         # create a card which shows the image captured by the webcam.
         cm = CardMaker("background-card")
-        cm.setUvRange(Point2(videoTextureScale[0], 0), Point2(0, videoTextureScale[1]))
-        cm.setFrame(-videoTextureScale[1], videoTextureScale[1], -videoTextureScale[0], videoTextureScale[0])
+        #cm.setUvRange(Point2(videoTextureScale[0], 0), Point2(0, videoTextureScale[1]))
+        #cm.setFrame(-videoTextureScale[1], videoTextureScale[1], -videoTextureScale[0], videoTextureScale[0])
+        cm.setFrame(-1, 1, -1, 1)
         card = self.render2d.attachNewNode(cm.generate())
         card.setTexture(self.tex)
 
@@ -34,7 +30,7 @@ class ARtest(ShowBase):
         # initialize artoolkit, self.cam is our camera ,
         # the camera_para.dat is the configuration file for your camera. this one comes with the artoolkit installation.
         # last parameter is the size of the pattern in panda-units.
-        self.ar = ARToolKit.make(self.cam, Filename(self.mainDir, "ar/camera_para.dat"), 0)
+        self.ar = ARToolKit.make(self.cam, Filename(self.mainDir, "ar/camera_para.dat"), 1)
 
         # load a model to visualize the tracking
         self.addObject()
@@ -46,10 +42,9 @@ class ARtest(ShowBase):
     def addObject(self):
         axis = self.loader.loadModel("teapot.egg")
         axis.reparentTo(self.render)
-        #axis.setScale(0.25, 0.25, 0.25)
-
+        axis.setScale(0.15, 0.15, 0.15)
         # attach the model to a pattern so it updates the model's position relative to the camera each time we call analyze()
-        self.ar.attachPattern(Filename(self.mainDir, "ar/patt.sample1"), axis)  # -> Falta validar esse arquivo de pattern
+        self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), axis)
 
     def updatePatterns(self, task):
         self.ar.analyze(self.tex, True)
