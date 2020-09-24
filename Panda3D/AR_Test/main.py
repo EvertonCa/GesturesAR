@@ -8,15 +8,14 @@ loadPrcFileData("", "auto-flip 1")  # usualy the drawn texture lags a bit behind
 class ARtest(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
-        # ------use OpenCVTexture under linux---------- use WebcamVideo under windows------------
         self.accept('1', self.detachObjetct)
 
+        #Windows WebCam
         option = WebcamVideo.getOption(0)  # 0 here is default webcam, 1 would be second cam etc.
         self.tex = MovieTexture(option)
         self.tex.setTexturesPower2(0)
+
         print("WebCamVideo based texture infos: -> {0}".format(self.tex))
-        videoTextureScale = Vec2(option.getSizeX() / float(self.tex.getXSize()),
-                                 option.getSizeY() / float(self.tex.getYSize()))
 
         # create a card which shows the image captured by the webcam.
         cm = CardMaker("background-card")
@@ -46,7 +45,9 @@ class ARtest(ShowBase):
         self.axis.reparentTo(self.render)
         self.axis.setScale(0.15, 0.15, 0.15)
         # attach the model to a pattern so it updates the model's position relative to the camera each time we call analyze()
-        self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis)
+
+        #self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis) # -> oficial
+        self.ar.attachPattern(Filename(self.mainDir, "ar/groot.patt"), self.axis)
         print(self.axis.getPos())
 
     def detachObjetct(self):
