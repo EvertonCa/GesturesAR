@@ -5,10 +5,13 @@ import os
 import pathlib
 import glob
 import time
+import numpy as np
+
 
 size_image = (int(320/2), int(180/2))
 #size_image = (1920, 1080)
 MIN_MATCH_COUNT = 10
+
 def angle_check(img, photo_directory, MIN_MATCH_COUNT=10):
 
     files_name = []
@@ -46,7 +49,7 @@ def angle_check(img, photo_directory, MIN_MATCH_COUNT=10):
                 good.append(m)
         matching_score.append(len(good))
         #print(len(good))
-    index_best = max(range(len(matching_score)), key=matching_score.__getitem__)
+    index_best = np.argmax(matching_score)
     return files_name[index_best]
 '''''
 
