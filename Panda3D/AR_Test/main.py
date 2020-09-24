@@ -9,6 +9,8 @@ class ARtest(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
         # ------use OpenCVTexture under linux---------- use WebcamVideo under windows------------
+        self.accept('1', self.detachObjetct)
+
         option = WebcamVideo.getOption(0)  # 0 here is default webcam, 1 would be second cam etc.
         self.tex = MovieTexture(option)
         self.tex.setTexturesPower2(0)
@@ -40,11 +42,16 @@ class ARtest(ShowBase):
         self.taskMgr.add(self.updatePatterns, "update-patterns")
 
     def addObject(self):
-        axis = self.loader.loadModel("teapot.egg")
-        axis.reparentTo(self.render)
-        axis.setScale(0.15, 0.15, 0.15)
+        self.axis = self.loader.loadModel("teapot.egg")
+        self.axis.reparentTo(self.render)
+        self.axis.setScale(0.15, 0.15, 0.15)
         # attach the model to a pattern so it updates the model's position relative to the camera each time we call analyze()
-        self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), axis)
+        self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis)
+        print(self.axis.getPos())
+
+    def detachObjetct(self):
+        self.ar.detachPatterns()
+        print(self.axis.getPos())
 
     def updatePatterns(self, task):
         self.ar.analyze(self.tex, True)
