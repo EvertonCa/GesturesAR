@@ -57,5 +57,6 @@ class ARtest(ShowBase):
         self.ar.analyze(self.tex, True)
         return Task.cont
 
+
 demo = ARtest()
 demo.run()
