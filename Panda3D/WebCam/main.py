@@ -15,7 +15,7 @@ class WebCamTest(ShowBase):
         # using WebcamVideo
         self.printWebOptions()
 
-        option = WebcamVideo.getOption(50)
+        option = WebcamVideo.getOption(0)
         videoTexture = MovieTexture(option)
         videoTexture.setKeepRamImage(False)
         print("WebCamVideo based texture infos: -> {0}".format(videoTexture))
@@ -33,8 +33,6 @@ class WebCamTest(ShowBase):
     def printWebOptions(self):
         for i in WebcamVideo.getOptions():
             print(i)
-
-
 
 app = WebCamTest()
 app.run()

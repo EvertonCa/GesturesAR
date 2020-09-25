@@ -38,7 +38,7 @@ class ARtest(ShowBase):
         self.addObject()
 
         # updating the models positions each frame.
-        sleep(10)  # some webcams are quite slow to start up so we add some safety
+        sleep(1)  # some webcams are quite slow to start up so we add some safety
         self.taskMgr.add(self.updatePatterns, "update-patterns")
 
     def addObject(self):
@@ -48,7 +48,7 @@ class ARtest(ShowBase):
         # attach the model to a pattern so it updates the model's position relative to the camera each time we call analyze()
 
         #self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis) # -> oficial
-        self.ar.attachPattern(Filename(self.mainDir, "ar/groot.patt"), self.axis)
+        self.ar.attachPattern(Filename(self.mainDir, "ar/groot.patt"), self.axis) # -> teste com um marcador dinâmico
         print(self.axis.getPos())
 
     def detachObjetct(self):
