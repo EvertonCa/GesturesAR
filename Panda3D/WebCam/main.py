@@ -1,5 +1,5 @@
 from click._compat import raw_input
-from panda3d.core import loadPrcFileData
+from panda3d.core import loadPrcFileData, Texture
 from panda3d.vision import WebcamVideo
 from panda3d.core import CardMaker, Point2, MovieTexture
 from direct.showbase.ShowBase import ShowBase
@@ -22,9 +22,13 @@ class WebCamTest(ShowBase):
 
         # Starting Webcam and placing the feed on the background card
         option = WebcamVideo.getOption(int(raw_input()))
+        cursor = option.open()
         #option = WebcamVideo.getOption(0)
-        videoTexture = MovieTexture(option)
+        #videoTexture = MovieTexture(option)
+        #videoTexture.setKeepRamImage(True)
+        videoTexture = Texture('movie')
         videoTexture.setKeepRamImage(True)
+        cursor.setupTexture(videoTexture)
         print("WebCamVideo based texture infos: -> {0}".format(videoTexture))
 
         cm = CardMaker("card")
