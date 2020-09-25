@@ -38,7 +38,7 @@ class ARtest(ShowBase):
         self.addObject()
 
         # updating the models positions each frame.
-        sleep(1)  # some webcams are quite slow to start up so we add some safety
+        sleep(10)  # some webcams are quite slow to start up so we add some safety
         self.taskMgr.add(self.updatePatterns, "update-patterns")
 
     def addObject(self):
