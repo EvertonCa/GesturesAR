@@ -13,7 +13,7 @@ class ARtest(ShowBase):
         #Windows WebCam
         option = WebcamVideo.getOption(0)  # 0 here is default webcam, 1 would be second cam etc.
         self.tex = MovieTexture(option)
-        #self.tex.setTexturesPower2(0)
+        self.tex.setTexturesPower2(0)
         self.tex.setKeepRamImage(True)
 
         print("WebCamVideo based texture infos: -> {0}".format(self.tex))

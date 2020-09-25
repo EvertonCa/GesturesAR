@@ -13,6 +13,8 @@ class WebCamTest(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
         # using WebcamVideo
+        self.printWebOptions()
+
         option = WebcamVideo.getOption(0)
         videoTexture = MovieTexture(option)
         videoTexture.setKeepRamImage(True)
@@ -27,6 +29,11 @@ class WebCamTest(ShowBase):
         card.reparentTo(self.render)
 
         self.accept('escape', lambda: sys.exit())
+
+    def printWebOptions(self):
+        for i in WebcamVideo.getOptions():
+            print(i)
+
 
 
 app = WebCamTest()
