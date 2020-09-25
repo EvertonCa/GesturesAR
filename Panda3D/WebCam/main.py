@@ -17,7 +17,7 @@ class WebCamTest(ShowBase):
 
         option = WebcamVideo.getOption(0)
         videoTexture = MovieTexture(option)
-        videoTexture.setKeepRamImage(True)
+        videoTexture.setKeepRamImage(False)
         print("WebCamVideo based texture infos: -> {0}".format(videoTexture))
 
         cm = CardMaker("card")
