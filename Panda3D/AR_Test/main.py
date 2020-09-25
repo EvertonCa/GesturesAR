@@ -42,9 +42,9 @@ class ARtest(ShowBase):
         self.taskMgr.add(self.updatePatterns, "update-patterns")
 
     def addObject(self):
-        self.axis = self.loader.loadModel("teapot.egg")
+        self.axis = self.loader.loadModel("models/ball")
         self.axis.reparentTo(self.render)
-        self.axis.setScale(0.15, 0.15, 0.15)
+        self.axis.setScale(0.5, 0.5, 0.5)
         # attach the model to a pattern so it updates the model's position relative to the camera each time we call analyze()
 
         #self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis) # -> oficial
