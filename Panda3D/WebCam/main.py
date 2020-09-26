@@ -12,10 +12,10 @@ loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind t
 
 
 class WebCamTest(ShowBase):
-
     def __init__(self):
         ShowBase.__init__(self)
-        # using WebcamVideo
+
+        #using WebcamVideo
         for x, option in enumerate(WebcamVideo.getOptions()):
             print(option, x)
         print("Choose webcam and resolution by index:")
@@ -23,6 +23,7 @@ class WebCamTest(ShowBase):
         # Starting Webcam and placing the feed on the background card
         option = WebcamVideo.getOption(int(raw_input()))
         #option = WebcamVideo.getOption(0)
+
         videoTexture = MovieTexture(option)
         videoTexture.setKeepRamImage(True)
         print("WebCamVideo based texture infos: -> {0}".format(videoTexture))

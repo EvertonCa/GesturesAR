@@ -3,7 +3,11 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
 from time import sleep
-loadPrcFileData("", "auto-flip 1")  # usualy the drawn texture lags a bit behind the calculted positions. this is a try to reduce the lag.
+
+loadPrcFileData("", "textures-power-2 none") #the webcam feed can not be made into a power of two texture
+loadPrcFileData("", "show-frame-rate-meter 1") #show fps
+loadPrcFileData("", "sync-video 0") #turn off v-sync
+loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind the calculted positions. this is a try to reduce the lag.
 
 class ARtest(ShowBase):
     def __init__(self):
@@ -22,6 +26,7 @@ class ARtest(ShowBase):
         cm = CardMaker("background-card")
         #cm.setUvRange(Point2(videoTextureScale[0], 0), Point2(0, videoTextureScale[1]))
         #cm.setFrame(-videoTextureScale[1], videoTextureScale[1], -videoTextureScale[0], videoTextureScale[0])
+        cm.setUvRange(Point2(0, 0), Point2(1, 1))
         cm.setFrame(-1, 1, -1, 1)
         card = self.render2d.attachNewNode(cm.generate())
         card.setTexture(self.tex)
@@ -47,8 +52,8 @@ class ARtest(ShowBase):
         self.axis.setScale(0.5, 0.5, 0.5)
         # attach the model to a pattern so it updates the model's position relative to the camera each time we call analyze()
 
-        #self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis) # -> oficial
-        self.ar.attachPattern(Filename(self.mainDir, "ar/groot.patt"), self.axis) # -> teste com um marcador dinâmico
+        self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis) # -> oficial
+        #self.ar.attachPattern(Filename(self.mainDir, "ar/groot.patt"), self.axis) # -> teste com um marcador dinâmico
         print(self.axis.getPos())
 
     def detachObjetct(self):
