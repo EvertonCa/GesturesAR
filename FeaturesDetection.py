@@ -10,14 +10,15 @@ import multiprocessing
 import pickle
 from multiprocessing import Process, Queue
 import sys
-from multiprocessing import Pool, TimeoutError
+from multiprocessing import Pool, TimeoutError, cpu_count
+from functools import partial
 
 size_image = (int(320/2), int(180/2))
 #size_image = (1920, 1080)
 MIN_MATCH_COUNT = 10
 
 
-def angle_check(des, des2, namefile_list, MIN_MATCH_COUNT=10, q=None):
+def angle_check(des, des2, namefile_list, MIN_MATCH_COUNT=10):
     matching_score = []
 
     for i in range(len(namefile_list)):
@@ -36,11 +37,17 @@ def angle_check(des, des2, namefile_list, MIN_MATCH_COUNT=10, q=None):
     index_best = np.argmax(matching_score)
 
     if matching_score[index_best] > MIN_MATCH_COUNT:
-        if q is not None:
-            q.put(namefile_list[index_best])
+        print(namefile_list[index_best])
         return namefile_list[index_best]
-
+    print(None)
     return None
+
+
+def angle_check_multicore(i, des, des2, namefile_list, MIN_MATCH_COUNT=10):
+    threshold0 = int(round(i * (len(namefile_list) + 1) / (cpu_count())))
+    threshold1 = int(round((i + 1) * (len(namefile_list) + 1) / (cpu_count())))
+    a = angle_check(des[threshold0:threshold1], des2[threshold0:threshold1], namefile_list[threshold0:threshold1], MIN_MATCH_COUNT)
+    return a
 
 
 def get_transformation_matrix(kp1, des1, kp2, des2):
@@ -210,30 +217,20 @@ if __name__ == '__main__':
     # find the keypoints and descriptors with SIFT
     kp2, des2 = sift.detectAndCompute(img1, None)
 
-    best = angle_check(des, des2, namefile_list)
+    #best = angle_check(des, des2, namefile_list)
+    arange_cpu = np.arange(cpu_count())
 
-    amount_threads = multiprocessing.cpu_count()
-    q = Queue()
-    chunksize = len(namefile_list) // amount_threads
-    thresholds = [round(i * (len(namefile_list) + 1) / (amount_threads)) for i in range(amount_threads + 1)]
-    jobs = []
-    for i in range(amount_threads):
-        p = Process(target=angle_check, args=(des[thresholds[i]:thresholds[i + 1]], des2[thresholds[i]:thresholds[i + 1]],
-                                              namefile_list[thresholds[i]:thresholds[i + 1]], 10, q))
-        jobs.append(p)
-        p.start()
-
+    with Pool(cpu_count()) as p:
+        resp = p.map(partial(angle_check_multicore, des=des, des2=des2, namefile_list=namefile_list), arange_cpu)
+    print(resp)
     l3 = []
     kp3 = []
     des3 = []
-    for proc in jobs:
-        proc.join()
-
-    while q.qsize() > 0:
-        temp = q.get()
-        l3.append(temp)
-        kp3.append(kp[namefile_list.index(temp)])
-        des3.append(des[namefile_list.index(temp)])
+    for i in resp:
+        if i is not None:
+            l3.append(i)
+            kp3.append(kp[namefile_list.index(i)])
+            des3.append(des[namefile_list.index(i)])
     print(l3)
 
     if len(l3) == 0:
