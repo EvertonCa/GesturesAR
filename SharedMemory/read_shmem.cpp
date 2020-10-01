@@ -4,10 +4,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/sem.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 
 #include "shared_memory.h"
 

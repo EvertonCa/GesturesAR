@@ -21,4 +21,8 @@ bool destroy_memory_block(char *filename);
 #define SEM_PRODUCER_FNAME "/myproducer"
 #define SEM_CONSUMER_FNAME "/myconsumer"
 
+//filenames for camera semaphores
+#define CAM_SEM_PRODUCER_FNAME "/camproducer"
+#define CAM_SEM_CONSUMER_FNAME "/camconsumer"
+
 #endif //SHAREDMEMORYC___SHARED_MEMORY_H

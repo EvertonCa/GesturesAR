@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(SharedMemoryC__)
+project(SharedMemory)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -lpthread")
@@ -17,6 +17,8 @@ set(PROJECT_SOURCES
 add_executable(Read read_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(Write write_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(Destroy destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS} destroy_shmem.cpp)
-add_executable(Webcam webcam.cpp)
+add_executable(ShareCam share_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
+add_executable(GetCam get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 
-target_link_libraries(Webcam ${OpenCV_LIBS})
+target_link_libraries(ShareCam ${OpenCV_LIBS})
+target_link_libraries(GetCam ${OpenCV_LIBS})
