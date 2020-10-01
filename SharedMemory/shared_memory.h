@@ -14,7 +14,7 @@ bool destroy_memory_block(char *filename);
 
 //all of the programs will shared these values
 #define BLOCK_SIZE 4096
-#define FILENAME "write_shmem.c"
+#define FILENAME "../write_shmem.c"
 #define IPC_RESULT_ERROR (-1)
 
 //filenames for two semaphores

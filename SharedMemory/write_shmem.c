@@ -17,10 +17,10 @@
 #define NUM_ITERATIONS 10
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("usage - %s [stuff to write]", argv[0]);
-        return -1;
-    }
+//    if (argc != 2) {
+//        printf("usage - %s [stuff to write]", argv[0]);
+//        return -1;
+//    }
 
     // setup some semaphores
     sem_t *sem_prod = sem_open(SEM_PRODUCER_FNAME, 0);
@@ -44,8 +44,10 @@ int main(int argc, char *argv[]) {
 
     for (int i=0; i < NUM_ITERATIONS; i++) {
         sem_wait(sem_cons); // wait for the consumer to have an open slot
-        printf("Writing: \"%s\"\n", argv[1]);
-        strncpy(block, argv[1], BLOCK_SIZE);
+        //printf("Writing: \"%s\"\n", argv[1]);
+        printf("Writing blabla\n");
+        //strncpy(block, argv[1], BLOCK_SIZE);
+        strncpy(block, "quit", BLOCK_SIZE);
         sem_post(sem_prod); // signal that something is in memory
     }
 

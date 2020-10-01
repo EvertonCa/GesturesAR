@@ -4,6 +4,9 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include "shared_memory.h"
+#include <unistd.h>
+#include <stdio.h>
+#include <limits.h>
 
 #define IPC_RESULT_ERROR (-1)
 
