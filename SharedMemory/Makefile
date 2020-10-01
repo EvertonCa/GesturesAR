@@ -1,7 +1,7 @@
 
 
 CC=clang
-CFLAGS=-g -Wall
+CFLAGS=-g -Wall -lpthread
 OBJS=shared_memory.o
 EXE=write_shmem.elf read_shmem.elf destroy_shmem.elf
 

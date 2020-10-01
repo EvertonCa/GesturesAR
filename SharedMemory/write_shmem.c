@@ -7,6 +7,8 @@
 #include <string.h>
 #include <sys/sem.h>
 #include <semaphore.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "shared_memory.h"
 
