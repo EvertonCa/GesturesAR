@@ -9,6 +9,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 set(PROJECT_HEADERS
         shared_memory.h
+        camera_parameters.h
         )
 set(PROJECT_SOURCES
         shared_memory.cpp

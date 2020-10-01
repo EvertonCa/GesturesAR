@@ -1,25 +1,19 @@
 //
 // Created by Everton Cardoso on 01/10/20.
+// This program captures live feed from the attached webcam and shares them via shared memory
 //
 
 #include "opencv2/opencv.hpp"
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <semaphore.h>
 
 #include "shared_memory.h"
-
-#define HEIGHT 720
-#define WIDTH 1280
-#define CHANNELS 3
-#define BLOCK_SIZE (WIDTH*HEIGHT*CHANNELS)
+#include "camera_parameters.h"
 
 
 int main(int, char**) {
-    cv::namedWindow("Video", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("Share Cam", cv::WINDOW_AUTOSIZE);
     cv::VideoCapture cap(0);
     if (!cap.isOpened())
         return -1;
@@ -46,17 +40,24 @@ int main(int, char**) {
 
     cv::Mat frame;
 
-    for ( ; ; ) {
+    while (true) {
+
         cap >> frame;
 
         sem_wait(sem_cons); // wait for the consumer to have an open slot
-        memcpy(block, frame.ptr(), BLOCK_SIZE);
+        memcpy(block, frame.ptr(), BLOCK_SIZE); // copy the frame to shared memory
         sem_post(sem_prod); // signal that something is in memory
 
-        cv::imshow("Video", frame);
-        if (cv::waitKey(33) >= 0) break;
+        cv::imshow("Share Cam", frame);
+
+        // runs until ESC key is pressed
+        if (cv::waitKey(1000/REFRESH_RATE) == 27) {
+            std::cout << "share" << std::endl;
+            break;
+        }
     }
 
+    // cleanup
     sem_close(sem_prod);
     sem_close(sem_cons);
     detach_memory_block(block);
