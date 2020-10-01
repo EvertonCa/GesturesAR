@@ -1,17 +1,16 @@
 cmake_minimum_required(VERSION 3.17)
-project(SharedMemory C)
+project(SharedMemoryC__)
 
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_FLAGS "-g -Wall -lpthread")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "-g -Wall -lpthread")
 
 set(PROJECT_HEADERS
         shared_memory.h
         )
 set(PROJECT_SOURCES
-        shared_memory.c
+        shared_memory.cpp
         )
 
-add_executable(Read read_shmem.c ${PROJECT_SOURCES} ${PROJECT_HEADERS})
-add_executable(Write write_shmem.c ${PROJECT_SOURCES} ${PROJECT_HEADERS})
-add_executable(Destroy destroy_shmem.c ${PROJECT_SOURCES} ${PROJECT_HEADERS})
-add_executable(Webcam webcam.c)
+add_executable(Read read_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
+add_executable(Write write_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
+add_executable(Destroy destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS} destroy_shmem.cpp)

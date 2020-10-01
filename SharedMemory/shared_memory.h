@@ -1,9 +1,9 @@
 //
-// Created by Everton Cardoso on 30/09/20.
+// Created by Everton Cardoso on 01/10/20.
 //
 
-#ifndef SHAREDMEMORYTEST_SHARED_MEMORY_H
-#define SHAREDMEMORYTEST_SHARED_MEMORY_H
+#ifndef SHAREDMEMORYC___SHARED_MEMORY_H
+#define SHAREDMEMORYC___SHARED_MEMORY_H
 
 #include <stdbool.h>
 
@@ -14,11 +14,11 @@ bool destroy_memory_block(char *filename);
 
 //all of the programs will shared these values
 #define BLOCK_SIZE 4096
-#define FILENAME "../write_shmem.c"
+#define FILENAME "../write_shmem.cpp"
 #define IPC_RESULT_ERROR (-1)
 
 //filenames for two semaphores
 #define SEM_PRODUCER_FNAME "/myproducer"
 #define SEM_CONSUMER_FNAME "/myconsumer"
 
-#endif //SHAREDMEMORYTEST_SHARED_MEMORY_H
+#endif //SHAREDMEMORYC___SHARED_MEMORY_H
