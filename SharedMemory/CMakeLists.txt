@@ -16,7 +16,7 @@ set(PROJECT_SOURCES
 
 add_executable(Read read_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(Write write_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
-add_executable(Destroy destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS} destroy_shmem.cpp)
+add_executable(Destroy destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(ShareCam share_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(GetCam get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 
