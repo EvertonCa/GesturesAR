@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 project(SharedMemoryC__)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "-g -Wall -lpthread")
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -lpthread")
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
