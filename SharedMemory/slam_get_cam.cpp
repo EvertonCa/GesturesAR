@@ -41,14 +41,14 @@ int main() {
     }
 
     // grab the shared memory block_cam
-    char *block_cam = attach_memory_block(FILENAME_CAM, BLOCK_SIZE);
+    char *block_cam = attach_memory_block(FILENAME_CAM, CAMERA_BLOCK_SIZE);
     if (block_cam == NULL) {
         printf("ERROR: coundn't get block_cam\n");
         return -1;
     }
 
     // grab the shared memory block_message
-    char *block_message = attach_memory_block(FILENAME_MESSAGE_SLAM, BLOCK_SIZE);
+    char *block_message = attach_memory_block(FILENAME_MESSAGE_SLAM, MESSAGE_BLOCK_SIZE);
     if (block_message == NULL) {
         printf("ERROR: coundn't get block_message\n");
         return -1;
@@ -66,7 +66,7 @@ int main() {
 
         sem_wait(sem_cons_message); // wait for the consumer to have an open slot
         printf("Writing SLAM\n");
-        strncpy(block_message, "SLAM", BLOCK_SIZE);
+        strncpy(block_message, "SLAM", MESSAGE_BLOCK_SIZE);
         sem_post(sem_prod_message); // signal that something is in memory
 
         // runs until ESC key is pressed

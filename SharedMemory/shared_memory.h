@@ -15,10 +15,10 @@ bool detach_memory_block(char *block);
 bool destroy_memory_block(char *filename);
 
 //all of the programs will shared these values
-#define BLOCK_SIZE 4096
-#define FILENAME_CAM "../share_cam.cpp"
-#define FILENAME_MESSAGE_SLAM "../slam_get_message.cpp"
-#define FILENAME_MESSAGE_YOLO "../yolo_get_message.cpp"
+#define MESSAGE_BLOCK_SIZE 4096
+#define FILENAME_CAM "/tmp/blockcam"
+#define FILENAME_MESSAGE_SLAM "/tmp/blockslam"
+#define FILENAME_MESSAGE_YOLO "/tmp/blockyolo"
 #define IPC_RESULT_ERROR (-1)
 
 //filenames for two semaphores

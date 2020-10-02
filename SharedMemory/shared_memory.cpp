@@ -30,18 +30,16 @@ static int get_shared_block(char *filename, int size) {
         exit(1);
     }
 
-    printf("key: %d\n", key);
     if (key == IPC_RESULT_ERROR) {
         return IPC_RESULT_ERROR;
     }
 
     // get shared block --- create it if it doesn't exist
-    return shmget(key, size, IPC_CREAT | SHM_R | SHM_W);
+    return shmget(key, size, IPC_CREAT | SHM_R | SHM_W );
 }
 
 char * attach_memory_block(char *filename, int size) {
     int shared_block_id = get_shared_block(filename, size);
-    printf("shared block id: %d\n", shared_block_id);
     char *result;
 
     if (shared_block_id == IPC_RESULT_ERROR) {

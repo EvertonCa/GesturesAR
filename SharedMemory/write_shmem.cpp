@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     }
 
     // grab the shared memory block
-    char *block = attach_memory_block(FILENAME_CAM, BLOCK_SIZE);
+    char *block = attach_memory_block(FILENAME_CAM, MESSAGE_BLOCK_SIZE);
     if (block == NULL) {
         printf("ERROR: coundn't get block\n");
         return -1;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
         //printf("Writing: \"%s\"\n", argv[1]);
         printf("Writing blabla\n");
         //strncpy(block, argv[1], BLOCK_SIZE);
-        strncpy(block, "quit", BLOCK_SIZE);
+        strncpy(block, "quit", MESSAGE_BLOCK_SIZE);
         sem_post(sem_prod); // signal that something is in memory
     }
 

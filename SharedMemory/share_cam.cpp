@@ -50,7 +50,7 @@ int main() {
     }
 
     // grab the shared memory block
-    char *block = attach_memory_block(FILENAME_CAM, BLOCK_SIZE);
+    char *block = attach_memory_block(FILENAME_CAM, CAMERA_BLOCK_SIZE);
     if (block == NULL) {
         printf("ERROR: coundn't get block\n");
         return -1;
@@ -64,7 +64,7 @@ int main() {
 
         sem_wait(sem_slam_cons); // wait for the consumer to have an open slot
         sem_wait(sem_yolo_cons);
-        memcpy(block, frame.ptr(), BLOCK_SIZE); // copy the frame to shared memory
+        memcpy(block, frame.ptr(), CAMERA_BLOCK_SIZE); // copy the frame to shared memory
         sem_post(sem_slam_prod); // signal that something is in memory
         sem_post(sem_yolo_prod);
 
