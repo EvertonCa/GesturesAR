@@ -12,8 +12,6 @@
 #include <stdio.h>
 #include <limits.h>
 
-#define IPC_RESULT_ERROR (-1)
-
 static int get_shared_block(char *filename, int size) {
     key_t key;
 

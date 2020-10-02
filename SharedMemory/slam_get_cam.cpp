@@ -11,23 +11,20 @@
 #include "shared_memory.h"
 #include "camera_parameters.h"
 
-int main(int argc, char *argv[]) {
+int main() {
 
-    cv::namedWindow("Get Cam", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("SLAM Get Cam", cv::WINDOW_AUTOSIZE);
 
     // setup some semaphores
-    sem_unlink(CAM_SEM_CONSUMER_FNAME);
-    sem_unlink(CAM_SEM_PRODUCER_FNAME);
-
-    sem_t *sem_prod = sem_open(CAM_SEM_PRODUCER_FNAME, O_CREAT, 0660, 0);
+    sem_t *sem_prod = sem_open(SLAM_SEM_PRODUCER_FNAME, 0);
     if (sem_prod == SEM_FAILED) {
-        perror("sem_open/camproducer");
+        perror("sem_open/slamproducer");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_cons = sem_open(CAM_SEM_CONSUMER_FNAME, O_CREAT, 0660, 1);
+    sem_t *sem_cons = sem_open(SLAM_SEM_CONSUMER_FNAME, 1);
     if (sem_cons == SEM_FAILED) {
-        perror("sem_open/camconsumer");
+        perror("sem_open/slamconsumer");
         exit(EXIT_FAILURE);
     }
 
@@ -46,19 +43,14 @@ int main(int argc, char *argv[]) {
         frame = cv::Mat(HEIGHT, WIDTH, 16, block, CHANNELS*WIDTH); // creates a frame from memory
         sem_post(sem_cons); // signal that data was acquired
 
-        cv::imshow("Get Cam", frame);
+        cv::imshow("SLAM Get Cam", frame);
 
         // runs until ESC key is pressed
         if (cv::waitKey(1000/REFRESH_RATE)  == 27) {
-            std::cout << "get" << std::endl;
+            std::cout << "slam get" << std::endl;
             break;
         }
     }
-
-    // cleanup
-    sem_close(sem_cons);
-    sem_close(sem_prod);
-    detach_memory_block(block);
 
     return 0;
 }

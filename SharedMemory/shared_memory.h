@@ -7,6 +7,8 @@
 
 #include <stdbool.h>
 
+#define IPC_RESULT_ERROR (-1)
+
 //attach a shared memory block associated with filename. Create it if doesn't exist
 char * attach_memory_block(char *filename, int size);
 bool detach_memory_block(char *block);
@@ -22,7 +24,10 @@ bool destroy_memory_block(char *filename);
 #define SEM_CONSUMER_FNAME "/myconsumer"
 
 //filenames for camera semaphores
-#define CAM_SEM_PRODUCER_FNAME "/camproducer"
-#define CAM_SEM_CONSUMER_FNAME "/camconsumer"
+#define SLAM_SEM_PRODUCER_FNAME "/slamproducer"
+#define SLAM_SEM_CONSUMER_FNAME "/slamconsumer"
+
+#define YOLO_SEM_PRODUCER_FNAME "/yoloproducer"
+#define YOLO_SEM_CONSUMER_FNAME "/yoloconsumer"
 
 #endif //SHAREDMEMORYC___SHARED_MEMORY_H
