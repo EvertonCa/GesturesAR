@@ -1,5 +1,5 @@
 //
-// Created by Everton Cardoso on 01/10/20.
+// Created by Everton Cardoso on 02/10/20.
 //
 #include <string.h>
 #include <stdio.h>
@@ -9,31 +9,26 @@
 
 #include "shared_memory.h"
 
-int main(int argc, char *argv[]) {
+int main() {
 
-    if (argc != 1) {
-        printf("usage - %s //no args", argv[0]);
-        return -1;
-    }
+    sem_unlink(YOLO_SEM_MESSAGE_PRODUCER_FNAME);
+    sem_unlink(YOLO_SEM_MESSAGE_CONSUMER_FNAME);
 
     // setup some semaphores
-    sem_unlink(SEM_CONSUMER_FNAME);
-    sem_unlink(SEM_PRODUCER_FNAME);
-
-    sem_t *sem_prod = sem_open(SEM_PRODUCER_FNAME, O_CREAT, 0660, 0);
+    sem_t *sem_prod = sem_open(YOLO_SEM_MESSAGE_PRODUCER_FNAME, O_CREAT, 0660, 0);
     if (sem_prod == SEM_FAILED) {
-        perror("sem_open/producer");
+        perror("sem_open/yolocamproducer");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_cons = sem_open(SEM_CONSUMER_FNAME, O_CREAT, 0660, 1);
+    sem_t *sem_cons = sem_open(YOLO_SEM_MESSAGE_CONSUMER_FNAME, O_CREAT, 0660, 1);
     if (sem_cons == SEM_FAILED) {
-        perror("sem_open/consumer");
+        perror("sem_open/yolocamconsumer");
         exit(EXIT_FAILURE);
     }
 
     // grab the shared memory block
-    char *block = attach_memory_block(FILENAME_CAM, BLOCK_SIZE);
+    char *block = attach_memory_block(FILENAME_MESSAGE_YOLO, BLOCK_SIZE);
     if (block == NULL) {
         printf("ERROR: coundn't get block\n");
         return -1;
@@ -42,7 +37,7 @@ int main(int argc, char *argv[]) {
     while (true) {
         sem_wait(sem_prod);
         if (strlen(block) > 0) {
-            printf("Reading: \"%s\"\n", block);
+            printf("Reading YOLO: \"%s\"\n", block);
             bool done = (strcmp(block, "quit") == 0);
             block[0] = 0;
             if (done) {
@@ -52,8 +47,8 @@ int main(int argc, char *argv[]) {
         sem_post(sem_cons);
     }
 
-    sem_close(sem_cons);
     sem_close(sem_prod);
+    sem_close(sem_cons);
     detach_memory_block(block);
 
     return 0;

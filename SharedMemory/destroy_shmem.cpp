@@ -7,16 +7,24 @@
 
 #include "shared_memory.h"
 
-int main(int argc, char *argv[]) {
-    if (argc != 1) {
-        printf("usage - %s //no args", argv[0]);
-        return -1;
+int main() {
+
+    if (destroy_memory_block(FILENAME_CAM)) {
+        printf("Destroyed block: %s\n", FILENAME_CAM);
+    } else {
+        printf("Could not destroy block: %s\n", FILENAME_CAM);
     }
 
-    if (destroy_memory_block(FILENAME)) {
-        printf("Destroyed block: %s\n", FILENAME);
+    if (destroy_memory_block(FILENAME_MESSAGE_SLAM)) {
+        printf("Destroyed block: %s\n", FILENAME_MESSAGE_SLAM);
     } else {
-        printf("Could not destroy block: %s\n", FILENAME);
+        printf("Could not destroy block: %s\n", FILENAME_MESSAGE_SLAM);
+    }
+
+    if (destroy_memory_block(FILENAME_MESSAGE_YOLO)) {
+        printf("Destroyed block: %s\n", FILENAME_MESSAGE_YOLO);
+    } else {
+        printf("Could not destroy block: %s\n", FILENAME_MESSAGE_YOLO);
     }
 
     return 0;

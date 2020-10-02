@@ -11,23 +11,37 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
+#include <fcntl.h>
 
 static int get_shared_block(char *filename, int size) {
     key_t key;
 
+//    char cwd[PATH_MAX];
+//    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+//        printf("Current working dir: %s\n", cwd);
+//    }
+
     // request a key
     // the key is linked to a filename, so that other programs can access it
-    key = ftok(filename, 0);
+    if (-1 != open(filename, O_CREAT, 0777)) {
+        key = key = ftok(filename, 0);
+    } else {
+        perror("open");
+        exit(1);
+    }
+
+    printf("key: %d\n", key);
     if (key == IPC_RESULT_ERROR) {
         return IPC_RESULT_ERROR;
     }
 
     // get shared block --- create it if it doesn't exist
-    return shmget(key, size, 0644 | IPC_CREAT);
+    return shmget(key, size, IPC_CREAT | SHM_R | SHM_W);
 }
 
 char * attach_memory_block(char *filename, int size) {
     int shared_block_id = get_shared_block(filename, size);
+    printf("shared block id: %d\n", shared_block_id);
     char *result;
 
     if (shared_block_id == IPC_RESULT_ERROR) {

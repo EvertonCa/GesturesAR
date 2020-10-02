@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     }
 
     // grab the shared memory block
-    char *block = attach_memory_block(FILENAME, BLOCK_SIZE);
+    char *block = attach_memory_block(FILENAME_CAM, BLOCK_SIZE);
     if (block == NULL) {
         printf("ERROR: coundn't get block\n");
         return -1;

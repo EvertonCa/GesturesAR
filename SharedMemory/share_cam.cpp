@@ -7,6 +7,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <semaphore.h>
+#include <fcntl.h>
 
 #include "shared_memory.h"
 #include "camera_parameters.h"
@@ -19,37 +20,37 @@ int main() {
         return -1;
 
     // setup some semaphores
-    sem_unlink(SLAM_SEM_CONSUMER_FNAME);
-    sem_unlink(SLAM_SEM_PRODUCER_FNAME);
-    sem_unlink(YOLO_SEM_CONSUMER_FNAME);
-    sem_unlink(YOLO_SEM_PRODUCER_FNAME);
+    sem_unlink(SLAM_SEM_CAM_CONSUMER_FNAME);
+    sem_unlink(SLAM_SEM_CAM_PRODUCER_FNAME);
+    sem_unlink(YOLO_SEM_CAM_CONSUMER_FNAME);
+    sem_unlink(YOLO_SEM_CAM_PRODUCER_FNAME);
 
-    sem_t *sem_slam_prod = sem_open(SLAM_SEM_PRODUCER_FNAME, O_CREAT, 0660, 0);
+    sem_t *sem_slam_prod = sem_open(SLAM_SEM_CAM_PRODUCER_FNAME, O_CREAT, 0660, 0);
     if (sem_slam_prod == SEM_FAILED) {
-        perror("sem_open/slamproducer");
+        perror("sem_open/slamcamproducer");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_slam_cons = sem_open(SLAM_SEM_CONSUMER_FNAME, O_CREAT, 0660, 1);
+    sem_t *sem_slam_cons = sem_open(SLAM_SEM_CAM_CONSUMER_FNAME, O_CREAT, 0660, 1);
     if (sem_slam_cons == SEM_FAILED) {
-        perror("sem_open/slamconsumer");
+        perror("sem_open/slamcamconsumer");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_yolo_prod = sem_open(YOLO_SEM_PRODUCER_FNAME, O_CREAT, 0660, 0);
+    sem_t *sem_yolo_prod = sem_open(YOLO_SEM_CAM_PRODUCER_FNAME, O_CREAT, 0660, 0);
     if (sem_yolo_prod == SEM_FAILED) {
-        perror("sem_open/yoloproducer");
+        perror("sem_open/yolocamproducer");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_yolo_cons = sem_open(YOLO_SEM_CONSUMER_FNAME, O_CREAT, 0660, 1);
+    sem_t *sem_yolo_cons = sem_open(YOLO_SEM_CAM_CONSUMER_FNAME, O_CREAT, 0660, 1);
     if (sem_yolo_cons == SEM_FAILED) {
-        perror("sem_open/yoloconsumer");
+        perror("sem_open/yolocamconsumer");
         exit(EXIT_FAILURE);
     }
 
     // grab the shared memory block
-    char *block = attach_memory_block(FILENAME, BLOCK_SIZE);
+    char *block = attach_memory_block(FILENAME_CAM, BLOCK_SIZE);
     if (block == NULL) {
         printf("ERROR: coundn't get block\n");
         return -1;
