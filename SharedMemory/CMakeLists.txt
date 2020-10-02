@@ -15,8 +15,6 @@ set(PROJECT_SOURCES
         shared_memory.cpp
         )
 
-add_executable(Read read_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
-add_executable(Write write_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(Destroy destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(ShareCam share_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(SlamGetCam slam_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
