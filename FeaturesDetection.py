@@ -1,4 +1,3 @@
-import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 import os
@@ -12,6 +11,7 @@ from multiprocessing import Process, Queue
 import sys
 from multiprocessing import Pool, TimeoutError, cpu_count
 from functools import partial
+from crop import crop_image
 
 size_image = (int(320/2), int(180/2))
 #size_image = (1920, 1080)
@@ -28,6 +28,7 @@ def angle_check(des, des2, namefile_list, MIN_MATCH_COUNT=10):
         flann = cv2.FlannBasedMatcher(index_params, search_params)
         matches = flann.knnMatch(des[i], des2, k=2)
 
+        # store all the good matches as per Lowe's ratio test.
         good = []
         for m, n in matches:
             if m.distance < 0.7 * n.distance:
@@ -36,10 +37,9 @@ def angle_check(des, des2, namefile_list, MIN_MATCH_COUNT=10):
 
     index_best = np.argmax(matching_score)
 
-    if matching_score[index_best] > MIN_MATCH_COUNT:
+    if matching_score[index_best] >= MIN_MATCH_COUNT:
         print(namefile_list[index_best])
         return namefile_list[index_best]
-    print(None)
     return None
 
 
@@ -48,27 +48,6 @@ def angle_check_multicore(i, des, des2, namefile_list, MIN_MATCH_COUNT=10):
     threshold1 = int(round((i + 1) * (len(namefile_list) + 1) / (cpu_count())))
     a = angle_check(des[threshold0:threshold1], des2[threshold0:threshold1], namefile_list[threshold0:threshold1], MIN_MATCH_COUNT)
     return a
-
-
-def get_transformation_matrix(kp1, des1, kp2, des2):
-
-    FLANN_INDEX_KDTREE = 1
-    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-    search_params = dict(checks=50)
-    flann = cv2.FlannBasedMatcher(index_params, search_params)
-    matches = flann.knnMatch(des1, des2, k=2)
-
-    good = []
-    for m, n in matches:
-        if m.distance < 0.7 * n.distance:
-            good.append(m)
-
-    src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-    dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-
-    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-
-    return M, mask
 
 
 def load_features_database(name, photo_directory=''):
@@ -94,6 +73,24 @@ def load_features_database(name, photo_directory=''):
     return kp, des, namefile_list
 
 
+def yolo2coordinates(yoloparameters_txt, imgshape):
+    boundbox_values = yoloparameters_txt.replace('\n', '')
+    boundbox_values = boundbox_values.split(" ")
+    boundbox_values = list(map(float, boundbox_values[1:]))
+
+    bx = boundbox_values[0] * imgshape[1]
+    by = boundbox_values[1] * imgshape[0]
+    bw = boundbox_values[2] * imgshape[1]
+    bh = boundbox_values[3] * imgshape[0]
+
+    xmin = bx - bw/2
+    xmax = bx + bw/2
+    ymin = by - bh/2
+    ymax = by + bh/2
+
+    return int(ymin), int(ymax), int(xmin), int(xmax)
+
+
 def save_features_database(name, photo_directory='', file_type='.JPG'):
     index = []
     namefile_list = []
@@ -102,23 +99,19 @@ def save_features_database(name, photo_directory='', file_type='.JPG'):
     for file in glob.glob(photo_directory + '*' + file_type):
         print(file)
         namefile_list.append(file)
+        txtfile = file.replace(photo_directory[:-1]+'\\', 'labels\\').replace(file_type, '.txt')
+        f = open(txtfile, "r")
+        boundbox_txt = f.readline()
 
-        # txtfile = file.replace(photo_directory, 'labels/').replace(file_type, '.txt')
-        # f = open(txtfile, "r")
-        # boundbox_values = f.readline().replace('\n', '')
-        # boundbox_values = boundbox_values.split(" ")
-        # boundbox_values = list(map(float, boundbox_values[1:]))
-
-        img_angle = cv2.imread(file, 0)
-        #img_angle = img_angle.crop[boundbox_values[0]:boundbox_values[1], boundbox_values[2]:boundbox_values[3]]
+        img_angle = np.asarray(cv2.imread(file, 0))
+        coordinates = yolo2coordinates(boundbox_txt, img_angle.shape)
+        img_angle = img_angle[coordinates[0]:coordinates[1], coordinates[2]:coordinates[3]]
 
         # Initiate SIFT detector
         sift = cv2.SIFT_create()
 
         # find the keypoints and descriptors with SIFT
         kp1, des1 = sift.detectAndCompute(img_angle, None)
-        #db.kp.append(kp1)
-        #des.append(des1)
         des.append(des1)
 
         index.append([])
@@ -139,25 +132,22 @@ def save_features_database(name, photo_directory='', file_type='.JPG'):
         pickle.dump(namefile_list, file_output, -1)
 
 
-def generate_matches_image(name_img1, name_img2):
-    MIN_MATCH_COUNT = 10
+def generate_matches_image(img1, img2, MIN_MATCH_COUNT = 10):
 
-    img1 = cv2.imread(name_img1, 0)  # queryImage
-    img2 = cv2.imread(name_img2, 0)  # trainImage
+    # img1: queryImage
+    # img2: trainImage
 
     # Initiate SIFT detector
-    sift = cv2.SIFT()
+    sift = cv2.SIFT_create()
 
     # find the keypoints and descriptors with SIFT
     kp1, des1 = sift.detectAndCompute(img1, None)
     kp2, des2 = sift.detectAndCompute(img2, None)
 
-    FLANN_INDEX_KDTREE = 0
+    FLANN_INDEX_KDTREE = 1
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
     search_params = dict(checks=50)
-
     flann = cv2.FlannBasedMatcher(index_params, search_params)
-
     matches = flann.knnMatch(des1, des2, k=2)
 
     # store all the good matches as per Lowe's ratio test.
@@ -169,31 +159,22 @@ def generate_matches_image(name_img1, name_img2):
     if len(good) > MIN_MATCH_COUNT:
         src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
         dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-
         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
         matchesMask = mask.ravel().tolist()
-
         h, w = img1.shape
-        pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+        pts = np.float32([[0, 0], [w - 1, 0], [w - 1, h - 1], [0, h - 1]]).reshape(-1, 1, 2)
         dst = cv2.perspectiveTransform(pts, M)
+        polygon = np.reshape(np.int32(dst), (1, 4, 2))
+        img3 = crop_image(cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB), polygon)
+        return img3
 
-        img2 = cv2.polylines(img2, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
-
-    else:
-        print("Not enough matches are found - %d/%d" % (len(good), MIN_MATCH_COUNT))
-        matchesMask = None
-
-    draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
-                       singlePointColor=None,
-                       matchesMask=matchesMask,  # draw only inliers
-                       flags=2)
-
-    img3 = cv2.drawMatches(img1, kp1, img2, kp2, good, None, **draw_params)
-
-    plt.imshow(img3, 'gray'), plt.show()
+    print("Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT))
+    return None
 
 
 if __name__ == '__main__':
+    start_all_time = time.time()
+
     label = 0# label do yolo
     name_img1 = 'Capturar.jpg'
     img1 = cv2.imread(name_img1, 0)  # imagem da webcam
@@ -210,7 +191,11 @@ if __name__ == '__main__':
     start_time = time.time()
 
     #save_features_database('sift_database', rating_dictionary[label] + '/', file_type='.JPG')
+    #print("--- SAVE %s seconds ---" % (time.time() - start_time))
+    start_time = time.time()
     kp, des, namefile_list = load_features_database('sift_database', rating_dictionary[label] + '/')
+    print("--- LOAD %s seconds ---" % (time.time() - start_time))
+    start_time = time.time()
 
     # Initiate SIFT detector
     sift = cv2.SIFT_create()
@@ -222,7 +207,9 @@ if __name__ == '__main__':
 
     with Pool(cpu_count()) as p:
         resp = p.map(partial(angle_check_multicore, des=des, des2=des2, namefile_list=namefile_list), arange_cpu)
-    print(resp)
+    print("--- END multicore SIFT %s seconds ---" % (time.time() - start_time))
+    start_time = time.time()
+
     l3 = []
     kp3 = []
     des3 = []
@@ -233,7 +220,7 @@ if __name__ == '__main__':
             des3.append(des[namefile_list.index(i)])
     print(l3)
 
-    if len(l3) == 0:
+    if len(l3) <= 0:
         print("Not enough matches are found")
         sys.exit()
     elif len(l3) > 1:
@@ -242,16 +229,26 @@ if __name__ == '__main__':
     else:
         best = l3[0]
         print(best)
-    print("--- %s seconds ---" % (time.time() - start_time))
+    print("--- END SIFT %s seconds ---" % (time.time() - start_time))
+    start_time = time.time()
 
     if best is not None:
         best_index = namefile_list.index(best)
-        M, mask = get_transformation_matrix(kp[best_index], des[best_index], kp2, des2)
-        generate_matches_image(name_img1, best)
+        #print(best_index)
+        imgbest = cv2.imread(best, cv2.IMREAD_GRAYSCALE)  # queryImage
+        txtfile = namefile_list[best_index].replace(rating_dictionary[label] + '\\', 'labels\\').replace('.JPG',
+                                                                                                         '.txt')
+        f = open(txtfile, "r")
+        boundbox_txt = f.readline()
+        coordinates = yolo2coordinates(boundbox_txt, imgbest.shape)
+
+        imgbest = imgbest[coordinates[0]:coordinates[1], coordinates[2]:coordinates[3]]
+        img3 = generate_matches_image(imgbest, img1)
+        cv2.imwrite('marcador.jpg', img3)
+
     else:
         print("Not enough matches are found")
 
+    print("--- marker %s seconds ---" % (time.time() - start_time))
+    print("--- TUDO %s seconds ---" % (time.time() - start_all_time))
 
-
-    #file_name = 'DS4/PlayStation2_1.JPG'
-    #print(file_name)
