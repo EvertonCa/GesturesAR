@@ -1,0 +1,26 @@
+# Configuration file for only hand tracking
+GPUnumber: 0
+DebugMode: 1
+FlipInput: 1
+OutputDirectory: ../../data/output
+WritePositions: 1
+
+JointPosNet: ../../data/CNNClassifier/rgb-crop_232_FINAL_synth+GAN_ProjLayer/merged_net.prototxt
+JointPosWeights: ../../data/CNNClassifier/rgb-crop_232_FINAL_synth+GAN_ProjLayer/merged_snapshot_iter_300000.caffemodel
+
+# in mm
+PalmLength: 100 #in mm
+NumOfFramesToAvgBones: 3  #number of frames to get an average from
+ResetBoundingBoxSize: 200 #size of bounding box when reset or init
+RescaleAtStart: 0 #starts from 3rd frame
+#relative bone scales are relative to palm bone (index 8 is always 1)
+#If you have specify your hand scale, divide each bone by PalmLength, so then index 8 bone is 1
+BoneLengths: 0.3,0.55,0.38,0.35,0.85,0.50,0.30,0.25,1.00,0.60,0.37,0.27,0.85,0.57,0.33,0.26,0.87,0.43,0.22,0.23 
+
+
+
+# Energy term parameters
+IKTermWeight: 1e-2
+IK2DTermWeight: 5e-7
+SmoothnessTermWeight: 1e-4 
+JointLimitsTermWeight: 3e-2 
