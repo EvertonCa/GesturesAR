@@ -16,7 +16,6 @@ set(PROJECT_SOURCES
         )
 
 set(VIRTUAL_CAMERA_SOURCE
-        virtual_camera_handler.cpp
         virtual_camera_handler.h
         camera_parameters.h
         )
