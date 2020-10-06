@@ -39,6 +39,8 @@ public:
             close(output);
             return false;
         }
+
+        return true;
     }
 private:
     cv::VideoCapture cam;
@@ -59,7 +61,7 @@ private:
         output = open(VIRTUAL_WEBCAM_1, O_RDWR);
         if(output < 0) {
             std::cerr << "ERROR: could not open output device!\n" <<
-                      strerror(errno); return -2;
+                      strerror(errno); return false;
         }
 
         // configure params for output device
@@ -68,7 +70,7 @@ private:
 
         if (ioctl(output, VIDIOC_G_FMT, &vid_format) < 0) {
             std::cerr << "ERROR: unable to get video format!\n" <<
-                      strerror(errno); return -1;
+                      strerror(errno); return false;
         }
 
         framesize = CAMERA_BLOCK_SIZE;
@@ -92,8 +94,10 @@ private:
 
         if (ioctl(output, VIDIOC_S_FMT, &vid_format) < 0) {
             std::cerr << "ERROR: unable to set video format!\n" <<
-                      strerror(errno); return -1;
+                      strerror(errno); return false;
         }
+
+        return true;
     }
 };
 
