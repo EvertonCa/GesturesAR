@@ -23,6 +23,11 @@ add_executable(YoloGetCam yolo_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS}
 add_executable(SlamGetMessage slam_get_message.cpp shared_memory.h shared_memory.cpp)
 add_executable(YoloGetMessage yolo_get_message.cpp shared_memory.h shared_memory.cpp)
 
+add_executable(VirtualCamera virtual_camera.cpp)
+add_executable(VirtualCameraHandler virtual_camera_handler.cpp)
+
 target_link_libraries(ShareCam ${OpenCV_LIBS})
 target_link_libraries(SlamGetCam ${OpenCV_LIBS})
 target_link_libraries(YoloGetCam ${OpenCV_LIBS})
+target_link_libraries(VirtualCamera ${OpenCV_LIBS})
+target_link_libraries(VirtualCameraHandler ${OpenCV_LIBS})
