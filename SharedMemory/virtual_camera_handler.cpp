@@ -8,19 +8,12 @@
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
 
-#ifndef VID_WIDTH
-#define VID_WIDTH 640
-#endif
-
-#ifndef VID_HEIGHT
-#define VID_HEIGHT 480
-#endif
+#include "camera_parameters.h"
 
 #define VIDEO_IN  "/dev/video0"
 #define VIDEO_OUT "/dev/video3"
 
-int
-main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
 
     // open and configure input camera (/dev/video0)
     cv::VideoCapture cam(VIDEO_IN);

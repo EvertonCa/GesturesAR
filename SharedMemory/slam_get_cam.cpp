@@ -59,7 +59,7 @@ int main() {
     while (true) {
 
         sem_wait(sem_prod_cam); // wait for the producer to have an open slot
-        frame = cv::Mat(HEIGHT, WIDTH, 16, block_cam, CHANNELS * WIDTH); // creates a frame from memory
+        frame = cv::Mat(CAMERA_HEIGHT, WIDTH, 16, block_cam, CHANNELS * WIDTH); // creates a frame from memory
         sem_post(sem_cons_cam); // signal that data was acquired
 
         cv::imshow("SLAM Get Cam", frame);
