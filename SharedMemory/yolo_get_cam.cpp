@@ -59,7 +59,7 @@ int main() {
     while (true) {
 
         sem_wait(sem_prod_cam); // wait for the producer to have an open slot
-        frame = cv::Mat(CAMERA_HEIGHT, WIDTH, 16, block_cam, CHANNELS * WIDTH); // creates a frame from memory
+        frame = cv::Mat(CAMERA_HEIGHT, CAMERA_WIDTH, 16, block_cam, CAMERA_CHANNELS * CAMERA_WIDTH); // creates a frame from memory
         sem_post(sem_cons_cam); // signal that data was acquired
 
         cv::imshow("YOLO Get Cam", frame);
@@ -70,7 +70,7 @@ int main() {
         sem_post(sem_prod_message); // signal that something is in memory
 
         // runs until ESC key is pressed
-        if (cv::waitKey(1000/REFRESH_RATE)  == 27) {
+        if (cv::waitKey(1000 / CAMERA_REFRESH_RATE) == 27) {
             std::cout << "yolo get" << std::endl;
             break;
         }

@@ -90,7 +90,7 @@ int main() {
         //cv::imshow("Share Cam", frame);
 
         // runs until ESC key is pressed
-        if (cv::waitKey(1000/REFRESH_RATE) == 27) {
+        if (cv::waitKey(1000 / CAMERA_REFRESH_RATE) == 27) {
             std::cout << "Share cam quit" << std::endl;
             break;
         }
