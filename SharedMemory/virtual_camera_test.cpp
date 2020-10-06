@@ -8,11 +8,13 @@ int main() {
     if (!cap.isOpened())
         return -1;
 
-    VirtualCameraHandler virtualCam(cap, VIRTUAL_WEBCAM_1);
+    VirtualCameraHandler virtualCam1(cap, VIRTUAL_WEBCAM_1);
+    VirtualCameraHandler virtualCam2(cap, VIRTUAL_WEBCAM_2);
 
     while (true) {
 
-        virtualCam.feedCam();
+        virtualCam1.feedCam();
+        virtualCam2.feedCam();
 
         // runs until ESC key is pressed
         if (cv::waitKey(1000/30) == 27) {
