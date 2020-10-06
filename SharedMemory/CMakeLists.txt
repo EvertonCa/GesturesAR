@@ -21,7 +21,7 @@ set(VIRTUAL_CAMERA_SOURCE
         )
 
 add_executable(Destroy destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
-add_executable(ShareCam share_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
+add_executable(ShareCam share_cam.cpp virtual_camera_handler.h ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(SlamGetCam slam_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(YoloGetCam yolo_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 

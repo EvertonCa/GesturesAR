@@ -11,6 +11,7 @@
 
 #include "shared_memory.h"
 #include "camera_parameters.h"
+#include "virtual_camera_handler.h"
 
 
 int main() {
@@ -71,6 +72,9 @@ int main() {
         return -1;
     }
 
+    // creates the virtual camera handler
+    VirtualCameraHandler virtualCam(cap);
+
     cv::Mat frame;
 
     while (true) {
@@ -82,6 +86,7 @@ int main() {
         sem_wait(sem_hands_cons); // wait for the hands consumer to have an open slot
 
         memcpy(block, frame.ptr(), CAMERA_BLOCK_SIZE); // copy the frame to shared memory
+        virtualCam.feedCam(); // replicate the camera frame to the virtual cameras
 
         sem_post(sem_slam_prod); // signal to slam that there is a frame in memory
         sem_post(sem_yolo_prod); // signal to yolo that there is a frame in memory
