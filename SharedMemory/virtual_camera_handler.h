@@ -15,8 +15,9 @@
 
 class VirtualCameraHandler {
 public:
-    VirtualCameraHandler(cv::VideoCapture cap) {
+    VirtualCameraHandler(cv::VideoCapture cap, std::string cameraAddress) {
         cam = cap;
+        camAddress = cameraAddress;
         setup();
     }
 
@@ -33,10 +34,10 @@ public:
         cv::cvtColor(frame, result, cv::COLOR_BGR2RGB);
 
         // write frame to output device
-        size_t written = write(output1, result.data, framesize);
+        size_t written = write(output, result.data, framesize);
         if (written < 0) {
             std::cerr << "ERROR: could not write to output device!\n";
-            close(output1);
+            close(output);
             return false;
         }
 
@@ -44,9 +45,10 @@ public:
     }
 private:
     cv::VideoCapture cam;
-    int output1, output2;
+    int output;
     struct v4l2_format vid_format;
     size_t framesize;
+    std::string camAddress;
 
     bool setup() {
 
@@ -57,15 +59,10 @@ private:
         cam.set(cv::CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH);
         cam.set(cv::CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT);
 
-        // open output devices
-        output1 = open(VIRTUAL_WEBCAM_1, O_RDWR);
-        if(output1 < 0) {
-            std::cerr << "ERROR: could not open output device 1!\n" <<
-                      strerror(errno); return false;
-        }
-        output2 = open(VIRTUAL_WEBCAM_2, O_RDWR);
-        if(output2 < 0) {
-            std::cerr << "ERROR: could not open output device 2!\n" <<
+        // open output device
+        output = open(camAddress, O_RDWR);
+        if(output < 0) {
+            std::cerr << "ERROR: could not open output device!\n" <<
                       strerror(errno); return false;
         }
 
@@ -73,13 +70,8 @@ private:
         memset(&vid_format, 0, sizeof(vid_format));
         vid_format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-        if (ioctl(output1, VIDIOC_G_FMT, &vid_format) < 0) {
-            std::cerr << "ERROR: unable to get video format 1!\n" <<
-                      strerror(errno); return false;
-        }
-
-        if (ioctl(output2, VIDIOC_G_FMT, &vid_format) < 0) {
-            std::cerr << "ERROR: unable to get video format 2!\n" <<
+        if (ioctl(output, VIDIOC_G_FMT, &vid_format) < 0) {
+            std::cerr << "ERROR: unable to get video format!\n" <<
                       strerror(errno); return false;
         }
 
@@ -102,13 +94,8 @@ private:
         vid_format.fmt.pix.sizeimage = framesize;
         vid_format.fmt.pix.field = V4L2_FIELD_NONE;
 
-        if (ioctl(output1, VIDIOC_S_FMT, &vid_format) < 0) {
-            std::cerr << "ERROR: unable to set video format 1!\n" <<
-                      strerror(errno); return false;
-        }
-
-        if (ioctl(output2, VIDIOC_S_FMT, &vid_format) < 0) {
-            std::cerr << "ERROR: unable to set video format 2!\n" <<
+        if (ioctl(output, VIDIOC_S_FMT, &vid_format) < 0) {
+            std::cerr << "ERROR: unable to set video format!\n" <<
                       strerror(errno); return false;
         }
 

@@ -8,7 +8,7 @@ int main() {
     if (!cap.isOpened())
         return -1;
 
-    VirtualCameraHandler virtualCam(cap);
+    VirtualCameraHandler virtualCam(cap, VIRTUAL_WEBCAM_1);
 
     while (true) {
 
