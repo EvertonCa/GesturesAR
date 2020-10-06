@@ -15,7 +15,7 @@
 
 class VirtualCameraHandler {
 public:
-    VirtualCameraHandler(cv::VideoCapture cap, std::string cameraAddress) {
+    VirtualCameraHandler(cv::VideoCapture cap, const char *cameraAddress) {
         cam = cap;
         camAddress = cameraAddress;
         setup();
@@ -48,7 +48,7 @@ private:
     int output;
     struct v4l2_format vid_format;
     size_t framesize;
-    std::string camAddress;
+    const char *camAddress;
 
     bool setup() {
 
