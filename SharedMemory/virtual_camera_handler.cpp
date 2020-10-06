@@ -17,7 +17,7 @@
 #endif
 
 #define VIDEO_IN  "/dev/video0"
-#define VIDEO_OUT "/dev/video1"
+#define VIDEO_OUT "/dev/video3"
 
 int
 main(int argc, char* argv[]) {
@@ -88,11 +88,8 @@ main(int argc, char* argv[]) {
         }
         cam.retrieve(frame);
 
-        // apply simple filter (NOTE: result should be as defined PIXEL FORMAT)
-        // convert twice because we need RGB24
         cv::Mat result;
-        cv::cvtColor(frame, result, cv::COLOR_RGB2GRAY);
-        cv::cvtColor(result, result, cv::COLOR_GRAY2RGB);
+        cv::cvtColor(frame, result, cv::COLOR_BGR2RGB);
 
         // show frame
         cv::imshow("gui", frame);

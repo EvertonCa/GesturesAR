@@ -6,8 +6,8 @@
 #define SHAREDMEMORY_CAMERA_PARAMETERS_H
 
 // ubuntu webcam = 480x640 | mac webcam = 720x1280
-#define HEIGHT 720
-#define WIDTH 1280
+#define HEIGHT 480
+#define WIDTH 640
 #define CHANNELS 3
 #define CAMERA_BLOCK_SIZE (WIDTH*HEIGHT*CHANNELS)
 #define REFRESH_RATE 30

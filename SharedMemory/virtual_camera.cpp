@@ -9,7 +9,7 @@
 
 int main() {
     cv::namedWindow("Test Cam", cv::WINDOW_AUTOSIZE);
-    cv::VideoCapture cap(0);
+    cv::VideoCapture cap(3);
     if (!cap.isOpened())
         return -1;
 
@@ -19,7 +19,7 @@ int main() {
 
         cap >> frame;
 
-        cv::imshow("Share Cam", frame);
+        cv::imshow("Test Cam", frame);
 
         // runs until ESC key is pressed
         if (cv::waitKey(1000/30) == 27) {
