@@ -27,6 +27,12 @@ int main() {
         printf("Could not destroy block: %s\n", FILENAME_MESSAGE_YOLO);
     }
 
+    if (destroy_memory_block(FILENAME_MESSAGE_HANDS)) {
+        printf("Destroyed block: %s\n", FILENAME_MESSAGE_HANDS);
+    } else {
+        printf("Could not destroy block: %s\n", FILENAME_MESSAGE_HANDS);
+    }
+
     return 0;
 }
 
