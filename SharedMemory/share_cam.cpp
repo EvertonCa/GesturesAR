@@ -72,8 +72,9 @@ int main() {
         return -1;
     }
 
-    // creates the virtual camera handler
-    VirtualCameraHandler virtualCam(cap);
+    // creates the virtual camera handlers
+    VirtualCameraHandler virtualCam1(cap, VIRTUAL_WEBCAM_1);
+    VirtualCameraHandler virtualCam2(cap, VIRTUAL_WEBCAM_2);
 
     cv::Mat frame;
 
@@ -85,8 +86,12 @@ int main() {
         sem_wait(sem_yolo_cons); // wait for the yolo consumer to have an open slot
         sem_wait(sem_hands_cons); // wait for the hands consumer to have an open slot
 
-        memcpy(block, frame.ptr(), CAMERA_BLOCK_SIZE); // copy the frame to shared memory
-        virtualCam.feedCam(); // replicate the camera frame to the virtual cameras
+        // copy the frame to shared memory
+        memcpy(block, frame.ptr(), CAMERA_BLOCK_SIZE);
+
+        // replicate the camera frame to the virtual cameras
+        virtualCam1.feedCam();
+        virtualCam2.feedCam();
 
         sem_post(sem_slam_prod); // signal to slam that there is a frame in memory
         sem_post(sem_yolo_prod); // signal to yolo that there is a frame in memory
