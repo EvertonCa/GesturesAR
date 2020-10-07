@@ -161,7 +161,7 @@ bool run(sem_t *sem_prod_cam, sem_t *sem_cons_cam, sem_t *sem_prod_message, sem_
 int main()
 {
 
-	cv::namedWindow("GANHands Cam", cv::WINDOW_AUTOSIZE);
+	//cv::namedWindow("GANHands Cam", cv::WINDOW_AUTOSIZE);
 
 	// setup some semaphores
     sem_t *sem_prod_cam = sem_open(HANDS_SEM_CAM_PRODUCER_FNAME, 0);
