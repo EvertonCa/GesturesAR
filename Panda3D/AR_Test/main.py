@@ -2,7 +2,7 @@ import sys
 from direct.actor.Actor import Actor
 from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Filename, Point2, TextNode, CollisionTraverser, \
-    CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, CollisionCapsule, BitMask32
+    CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, CollisionCapsule, BitMask32, LVecBase3f, LQuaternion
 from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
@@ -37,6 +37,8 @@ class ARtest(ShowBase):
 
         self.defineKeys()
 
+        self.readFile()
+
         self.title = OnscreenText(text="Simulação do TCC",
                                   fg=(1, 1, 1, 1), parent=self.a2dBottomRight,
                                   align=TextNode.ARight, pos=(-0.1, 0.1),
@@ -69,7 +71,7 @@ class ARtest(ShowBase):
 
         self.define_fingers_collision()
 
-        self.taskMgr.add(self.setHandPostion, "HandTracking")
+        self.taskMgr.add(self.setHandPosition, "HandTracking")
 
         #Windows WebCam
         option = WebcamVideo.getOption(0)  # 0 here is default webcam, 1 would be second cam etc.
@@ -81,8 +83,6 @@ class ARtest(ShowBase):
 
         # create a card which shows the image captured by the webcam.
         cm = CardMaker("background-card")
-        #cm.setUvRange(Point2(videoTextureScale[0], 0), Point2(0, videoTextureScale[1]))
-        #cm.setFrame(-videoTextureScale[1], videoTextureScale[1], -videoTextureScale[0], videoTextureScale[0])
         cm.setUvRange(Point2(0, 0), Point2(1, 1))
         cm.setFrame(-1, 1, -1, 1)
         card = self.render2d.attachNewNode(cm.generate())
@@ -129,6 +129,39 @@ class ARtest(ShowBase):
     def updatePatterns(self, task):
         self.ar.analyze(self.tex, True)
         return Task.cont
+
+    def readFile(self):
+        file = open("Trajetoria.txt", "r")
+        self.txtLines = file.readlines()
+        file.close()
+
+    def refreshCameraPosition(self):
+        contador = 0
+        x = 0
+        y = 0
+        z = 0
+        qx = 0
+        qy = 0
+        qz = 0
+        qw = 0
+        for line in self.txtLines:
+            splitedString = line.split()
+            if (contador == 0):
+                x = int(splitedString[1])
+                y = int(splitedString[2])
+                z = int(splitedString[3])
+            elif (contador == 1):
+                qx = int(splitedString[0])
+                qy = int(splitedString[1])
+                qz = int(splitedString[2])
+                qw = int(splitedString[3])
+            contador += contador
+            if (contador > 1):
+                vector3f = LVecBase3f(x, y, z)
+                quaternion = LQuaternion(qx, qy, qz, qw)
+                self.cam.setPosQuat(vector3f, quaternion)
+                contador = 0
+
 
     def loadHandJoints(self):
         # Joints do dedo mindinho
@@ -187,6 +220,7 @@ class ARtest(ShowBase):
         self.accept('7', self.setHandDepth, [-0.1])
         self.accept('8', self.resetHandPosition)
         self.accept('9', self.detachObjetct)
+        self.accept('0', self.refreshCameraPosition)
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)
@@ -199,8 +233,9 @@ class ARtest(ShowBase):
         self.onekeyText = genLabelText("[7]: Muda a profundidade da mão negativamente", 8, self)
         self.onekeyText = genLabelText("[8]: Reseta a posição da mão", 9, self)
         self.onekeyText = genLabelText("[9]: Detach do objeto", 10, self)
+        self.onekeyText = genLabelText("[0]: Muda as coordenadas da câmera de acordo com o SLAM", 11, self)
 
-    def setHandPostion(self, task):
+    def setHandPosition(self, task):
         if self.mouseWatcherNode.hasMouse():
             mousePosition = self.mouseWatcherNode.getMouse()
             self.hand.setX(mousePosition.getX() * 2)
