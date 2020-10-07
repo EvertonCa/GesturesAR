@@ -34,6 +34,7 @@
 #define CAMERA_CHANNELS 3
 #define CAMERA_BLOCK_SIZE (CAMERA_WIDTH*CAMERA_HEIGHT*CAMERA_CHANNELS)
 #define CAMERA_REFRESH_RATE 30
+#define RESTART_THRESHOLD 1000.0
 
 static int get_shared_block(char *filename, int size) {
     key_t key;
@@ -86,6 +87,16 @@ bool destroy_memory_block(char *filename) {
     return (shmctl(shared_block_id, IPC_RMID, NULL) != IPC_RESULT_ERROR);
 }
 
+bool check3D(std::vector<cv::Point3d> *coordinates3d) {
+	for (int i = 0; i < coordinates3d->size(); i++){
+		if (coordinates3d->at(i).z > RESTART_THRESHOLD || coordinates3d->at(i).z < -RESTART_THRESHOLD ){
+			return false;
+		}
+	}
+	return true;
+
+}
+
 bool run(sem_t *sem_prod_cam, sem_t *sem_cons_cam, sem_t *sem_prod_message, sem_t *sem_cons_message, char *block_cam, char *block_message, int *frame_cont) {
 	
 	Kara kara;
@@ -113,15 +124,20 @@ bool run(sem_t *sem_prod_cam, sem_t *sem_cons_cam, sem_t *sem_prod_message, sem_
 
         std::vector<cv::Point3d> coordinates3d = kara.getCurrent3D();
 
+        bool answer = check3D(&coordinates3d);
+
         std::stringstream coordinatesString;
 
-        coordinatesString << *frame_cont << " " << kara.getCurrent3D() << std::endl;
+        coordinatesString << *frame_cont << " " << coordinates3d << std::endl;
 
         //std::cout << coordinatesString.str().c_str() << std::endl;
 
         strncpy(block_message, coordinatesString.str().c_str(), MESSAGE_BLOCK_SIZE);
 
         sem_post(sem_prod_message); // signal that something is in memory
+
+        if (!answer)
+        	return false;
 		
 
 		int waitKeyPressed = cv::waitKey(1000/30);
