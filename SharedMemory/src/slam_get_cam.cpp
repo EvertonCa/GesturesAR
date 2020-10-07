@@ -8,35 +8,35 @@
 #include <semaphore.h>
 #include <fcntl.h>
 
-#include "shared_memory.h"
-#include "camera_parameters.h"
+#include "../includes/shared_memory.h"
+#include "../includes/camera_parameters.h"
 
 int main() {
 
-    cv::namedWindow("YOLO Get Cam", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("SLAM Get Cam", cv::WINDOW_AUTOSIZE);
 
     // setup some semaphores
-    sem_t *sem_prod_cam = sem_open(YOLO_SEM_CAM_PRODUCER_FNAME, 0);
+    sem_t *sem_prod_cam = sem_open(SLAM_SEM_CAM_PRODUCER_FNAME, 0);
     if (sem_prod_cam == SEM_FAILED) {
-        perror("sem_open/yolocamproducer");
+        perror("sem_open/slamcamproducer");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_cons_cam = sem_open(YOLO_SEM_CAM_CONSUMER_FNAME, 1);
+    sem_t *sem_cons_cam = sem_open(SLAM_SEM_CAM_CONSUMER_FNAME, 1);
     if (sem_cons_cam == SEM_FAILED) {
-        perror("sem_open/yolocamconsumer");
+        perror("sem_open/slamcamconsumer");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_prod_message = sem_open(YOLO_SEM_MESSAGE_PRODUCER_FNAME, 0);
+    sem_t *sem_prod_message = sem_open(SLAM_SEM_MESSAGE_PRODUCER_FNAME, 0);
     if (sem_prod_message == SEM_FAILED) {
-        perror("sem_open/yolocamproducer");
+        perror("sem_open/slamcamproducer");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_cons_message = sem_open(YOLO_SEM_MESSAGE_CONSUMER_FNAME, 1);
+    sem_t *sem_cons_message = sem_open(SLAM_SEM_MESSAGE_CONSUMER_FNAME, 1);
     if (sem_cons_message == SEM_FAILED) {
-        perror("sem_open/yolocamconsumer");
+        perror("sem_open/slamcamconsumer");
         exit(EXIT_FAILURE);
     }
 
@@ -48,7 +48,7 @@ int main() {
     }
 
     // grab the shared memory block_message
-    char *block_message = attach_memory_block(FILENAME_MESSAGE_YOLO, MESSAGE_BLOCK_SIZE);
+    char *block_message = attach_memory_block(FILENAME_MESSAGE_SLAM, MESSAGE_BLOCK_SIZE);
     if (block_message == NULL) {
         printf("ERROR: coundn't get block_message\n");
         return -1;
@@ -62,16 +62,16 @@ int main() {
         frame = cv::Mat(CAMERA_HEIGHT, CAMERA_WIDTH, 16, block_cam, CAMERA_CHANNELS * CAMERA_WIDTH); // creates a frame from memory
         sem_post(sem_cons_cam); // signal that data was acquired
 
-        cv::imshow("YOLO Get Cam", frame);
+        cv::imshow("SLAM Get Cam", frame);
 
         sem_wait(sem_cons_message); // wait for the consumer to have an open slot
-        printf("Writing YOLO\n");
-        strncpy(block_message, "YOLO", MESSAGE_BLOCK_SIZE);
+        printf("Writing SLAM\n");
+        strncpy(block_message, "SLAM", MESSAGE_BLOCK_SIZE);
         sem_post(sem_prod_message); // signal that something is in memory
 
         // runs until ESC key is pressed
         if (cv::waitKey(1000 / CAMERA_REFRESH_RATE) == 27) {
-            std::cout << "yolo get" << std::endl;
+            std::cout << "slam get" << std::endl;
             break;
         }
     }

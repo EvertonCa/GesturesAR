@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "shared_memory.h"
+#include "../includes/shared_memory.h"
 
 int main() {
 

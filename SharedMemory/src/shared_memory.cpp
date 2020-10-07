@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include "shared_memory.h"
+#include "../includes/shared_memory.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>

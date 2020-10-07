@@ -9,9 +9,9 @@
 #include <semaphore.h>
 #include <fcntl.h>
 
-#include "shared_memory.h"
-#include "camera_parameters.h"
-#include "virtual_camera_handler.h"
+#include "../includes/shared_memory.h"
+#include "../includes/camera_parameters.h"
+#include "../includes/virtual_camera_handler.h"
 
 
 int main() {
