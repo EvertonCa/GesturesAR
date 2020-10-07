@@ -37,7 +37,7 @@ int main() {
     while (true) {
         sem_wait(sem_prod);
         if (strlen(block) > 0) {
-            printf("Reading YOLO: \"%s\"\n", block);
+            printf("%s\n", block);
             bool done = (strcmp(block, "quit") == 0);
             block[0] = 0;
             if (done) {

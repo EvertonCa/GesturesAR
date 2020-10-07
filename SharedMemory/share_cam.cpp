@@ -16,7 +16,7 @@
 
 int main() {
     //cv::namedWindow("Share Cam", cv::WINDOW_AUTOSIZE);
-    cv::VideoCapture cap(0);
+    cv::VideoCapture cap(REAL_WEBCAM);
     if (!cap.isOpened())
         return -1;
 
