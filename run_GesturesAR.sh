@@ -1,10 +1,10 @@
-echo "~~~~~~~~~~~~~~~ Iniciando TCC - Hand Gestures ~~~~~~~~~~~~~~~"
+echo "~~~~~~~~~~~~~~~ Starting TCC - Hand Gestures ~~~~~~~~~~~~~~~"
 
-echo "Iniciando v4l2loopback..."
+echo "Starting v4l2loopback..."
 
 #echo 0112358 | sudo -S modprobe v4l2loopback video_nr=3,4 card_label="Virtual Camera 1","Virtual Camera 2"
 
-echo "Iniciando Camera Sharing..."
+echo "Starting Camera Sharing..."
 
 # starts the camera sharing in a new terminal
 gnome-terminal -- bash -c 'cd SharedMemory/cmake-build-debug/ && echo "Sharing Camera Feed..." && chmod +x ShareCam && ./ShareCam; sleep 1'
