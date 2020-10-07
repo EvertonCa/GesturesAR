@@ -18,7 +18,7 @@ int main() {
     //cv::namedWindow("Share Cam", cv::WINDOW_AUTOSIZE);
     cv::VideoCapture cap(0);
     if (!cap.isOpened())
-        return -1;+
+        return -1;
 
     // setup some semaphores
     sem_unlink(SLAM_SEM_CAM_CONSUMER_FNAME);

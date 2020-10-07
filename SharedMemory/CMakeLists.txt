@@ -26,6 +26,7 @@ add_executable(YoloGetCam yolo_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS}
 
 add_executable(SlamGetMessage slam_get_message.cpp shared_memory.h shared_memory.cpp)
 add_executable(YoloGetMessage yolo_get_message.cpp shared_memory.h shared_memory.cpp)
+add_executable(HandsGetMessage hands_get_message.cpp shared_memory.h shared_memory.cpp)
 
 add_executable(VirtualCamera virtual_camera.cpp)
 
