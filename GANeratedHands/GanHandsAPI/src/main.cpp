@@ -87,8 +87,6 @@ bool destroy_memory_block(char *filename) {
 }
 
 bool run(sem_t *sem_prod_cam, sem_t *sem_cons_cam, sem_t *sem_prod_message, sem_t *sem_cons_message, char *block_cam, char *block_message, int *frame_cont) {
-
-	cv::namedWindow("GANHands Cam", cv::WINDOW_AUTOSIZE);
 	
 	Kara kara;
 
@@ -104,27 +102,22 @@ bool run(sem_t *sem_prod_cam, sem_t *sem_cons_cam, sem_t *sem_prod_message, sem_
 
         frame = cv::Mat(CAMERA_HEIGHT, CAMERA_WIDTH, 16, block_cam, CAMERA_CHANNELS * CAMERA_WIDTH); // creates a frame from memory
 
-        sem_post(sem_cons_cam); // signal that data was acquired
-
         kara.processImg(frame);
 
-        *frame_cont ++;
+        sem_post(sem_cons_cam); // signal that data was acquired
 
-        std::cout << sem_cons_message << std::endl << std::endl << std::endl;
-
+        (*frame_cont) ++;
 
         // HANDLING MESSAGES
         sem_wait(sem_cons_message); // wait for the consumer to have an open slot
-
-        std::cout << " ----------------------------------------------- " << std::endl << std::endl << std::endl;
 
         std::vector<cv::Point3d> coordinates3d = kara.getCurrent3D();
 
         std::stringstream coordinatesString;
 
-        coordinatesString << *frame_cont << " " << coordinates3d << std::endl;
+        coordinatesString << *frame_cont << " " << kara.getCurrent3D() << std::endl;
 
-        std::cout << coordinatesString.str().c_str() << std::endl;
+        //std::cout << coordinatesString.str().c_str() << std::endl;
 
         strncpy(block_message, coordinatesString.str().c_str(), MESSAGE_BLOCK_SIZE);
 
@@ -151,6 +144,8 @@ bool run(sem_t *sem_prod_cam, sem_t *sem_cons_cam, sem_t *sem_prod_message, sem_
 
 int main()
 {
+
+	cv::namedWindow("GANHands Cam", cv::WINDOW_AUTOSIZE);
 
 	// setup some semaphores
     sem_t *sem_prod_cam = sem_open(HANDS_SEM_CAM_PRODUCER_FNAME, 0);
@@ -193,9 +188,9 @@ int main()
 
     std::cout << " ----------------------------------- STARTING GANHands ---------------------------------------- " << std::endl;
 
-    int *frame_cont = 0;
+    int frame_cont = 0;
 
-	while(!run(sem_prod_cam, sem_cons_cam, sem_prod_message, sem_cons_message, block_cam, block_message, frame_cont));
+	while(!run(sem_prod_cam, sem_cons_cam, sem_prod_message, sem_cons_message, block_cam, block_message, &frame_cont));
 
 	sem_close(sem_prod_cam);
     sem_close(sem_cons_cam);
@@ -207,4 +202,3 @@ int main()
 		
 	return 0;
 }
-
