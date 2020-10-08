@@ -14,6 +14,8 @@ loadPrcFileData("", "show-frame-rate-meter 1") #show fps
 loadPrcFileData("", "sync-video 0") #turn off v-sync
 loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind the calculted positions. this is a try to reduce the lag.
 
+positionArray = []
+globalCounter = 0
 
 def genLabelText(text, i, self):
     return OnscreenText(text=text, parent=self.a2dTopLeft, scale=.06,
@@ -38,6 +40,8 @@ class ARtest(ShowBase):
         self.defineKeys()
 
         self.readFile()
+
+        self.fillArray()
 
         self.title = OnscreenText(text="Simulação do TCC",
                                   fg=(1, 1, 1, 1), parent=self.a2dBottomRight,
@@ -120,11 +124,10 @@ class ARtest(ShowBase):
         # attach the model to a pattern so it updates the model's position relative to the camera each time we call analyze()
         self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis)
         #self.ar.attachPattern(Filename(self.mainDir, "ar/groot_720.patt"), self.axis)
-        print(self.axis.getPos())
 
     def detachObjetct(self):
         self.ar.detachPatterns()
-        print(self.axis.getPos())
+        print("Posição do objeto agora: " + str(self.axis.getPos()))
 
     def updatePatterns(self, task):
         self.ar.analyze(self.tex, True)
@@ -136,6 +139,17 @@ class ARtest(ShowBase):
         file.close()
 
     def refreshCameraPosition(self):
+        global globalCounter
+        global positionArray
+
+        self.cam.setPosQuat(positionArray[globalCounter][0], positionArray[globalCounter][1])
+
+        globalCounter += 1
+        sleep(0.033) #Wait until next iteration
+
+    def fillArray(self):
+        global positionArray
+
         contador = 0
         x = 0
         y = 0
@@ -147,20 +161,26 @@ class ARtest(ShowBase):
         for line in self.txtLines:
             splitedString = line.split()
             if (contador == 0):
-                x = int(splitedString[1])
-                y = int(splitedString[2])
-                z = int(splitedString[3])
+                x = float(splitedString[1]) * 10
+                y = float(splitedString[2]) * 10
+                z = float(splitedString[3]) * 10
             elif (contador == 1):
-                qx = int(splitedString[0])
-                qy = int(splitedString[1])
-                qz = int(splitedString[2])
-                qw = int(splitedString[3])
-            contador += contador
+                qx = float(splitedString[0])
+                qy = float(splitedString[1])
+                qz = float(splitedString[2])
+                qw = float(splitedString[3])
+            contador += 1
             if (contador > 1):
                 vector3f = LVecBase3f(x, y, z)
                 quaternion = LQuaternion(qx, qy, qz, qw)
-                self.cam.setPosQuat(vector3f, quaternion)
+                cameraPos = [vector3f, quaternion]
+                positionArray.append(cameraPos)
                 contador = 0
+
+
+    def reloadCam(self):
+        self.cam.setPos(0, 0, 0)
+        print(self.cam.getPos())
 
 
     def loadHandJoints(self):
@@ -210,7 +230,7 @@ class ARtest(ShowBase):
             self.define_capsule_collision(finger)
 
     def defineKeys(self):
-        self.accept('escape', sys.exit)
+        self.accept('escape', self.reloadCam)
         self.accept('1', self.changePerspective, [-60, -60])
         self.accept('2', self.changePerspective, [-60, 60])
         self.accept('3', self.moveFingers)
