@@ -138,6 +138,9 @@ class ARtest(ShowBase):
         self.txtLines = file.readlines()
         file.close()
 
+    def callBackFunction(self):
+        self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
+
     def refreshCameraPosition(self):
         global globalCounter
         global positionArray
@@ -181,7 +184,6 @@ class ARtest(ShowBase):
     def reloadCam(self):
         self.cam.setPos(0, 0, 0)
         print(self.cam.getPos())
-
 
     def loadHandJoints(self):
         # Joints do dedo mindinho
@@ -240,7 +242,7 @@ class ARtest(ShowBase):
         self.accept('7', self.setHandDepth, [-0.1])
         self.accept('8', self.resetHandPosition)
         self.accept('9', self.detachObjetct)
-        self.accept('0', self.refreshCameraPosition)
+        self.accept('0', self.callBackFunction)
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)
