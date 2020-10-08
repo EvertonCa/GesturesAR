@@ -141,14 +141,19 @@ class ARtest(ShowBase):
     def callBackFunction(self):
         self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
 
-    def refreshCameraPosition(self):
+    def refreshCameraPosition(self, task):
         global globalCounter
         global positionArray
 
-        self.cam.setPosQuat(positionArray[globalCounter][0], positionArray[globalCounter][1])
+        if(globalCounter <= 816):
+            quaternion = LQuaternion(positionArray[globalCounter][1][0], positionArray[globalCounter][1][1],
+                                     positionArray[globalCounter][1][2], positionArray[globalCounter][1][3])
+            self.cam.setPosQuat(positionArray[globalCounter][0], quaternion)
+            globalCounter += 1
 
-        globalCounter += 1
         sleep(0.033) #Wait until next iteration
+
+        return Task.cont
 
     def fillArray(self):
         global positionArray
@@ -175,7 +180,7 @@ class ARtest(ShowBase):
             contador += 1
             if (contador > 1):
                 vector3f = LVecBase3f(x, y, z)
-                quaternion = LQuaternion(qx, qy, qz, qw)
+                quaternion = LQuaternion(qw, qx, qy, qz)
                 cameraPos = [vector3f, quaternion]
                 positionArray.append(cameraPos)
                 contador = 0
