@@ -8,7 +8,28 @@
 #include <semaphore.h>
 #include <fcntl.h>
 
+#include <thread>
+
 #include "../includes/shared_memory.h"
+
+// this function gets the message for the received sender
+void get_message(sem_t *sem_prod, sem_t *sem_cons, char *block, char *modulo) {
+    while (true) {
+        sem_wait(sem_prod);
+
+        if (strlen(block) > 0) {
+            printf("%s: %s\n", modulo, block);
+            bool done = (strcmp(block, "quit") == 0);
+            block[0] = 0;
+            if (done) {
+                break;
+            }
+        }
+
+        sem_post(sem_cons);
+    }
+
+}
 
 int main() {
 
@@ -81,44 +102,19 @@ int main() {
         return -1;
     }
 
-    while (true) {
+    // creates threads for each module
+    char *yoloText = "YOLO";
+    char *slamText = "SLAM";
+    char *handsText = "HANDS";
+    std::thread yoloThread(get_message, sem_prod_yolo, sem_cons_yolo, block_yolo, yoloText);
+    std::thread slamThread(get_message, sem_prod_slam, sem_cons_slam, block_slam, slamText);
+    std::thread handsThread(get_message, sem_prod_hands, sem_cons_hands, block_hands, handsText);
 
-        sem_wait(sem_prod_yolo);
-        sem_wait(sem_prod_slam);
-        sem_wait(sem_prod_hands);
-
-        if (strlen(block_yolo) > 0) {
-            printf("YOLO: %s\n", block_yolo);
-            bool done = (strcmp(block_yolo, "quit") == 0);
-            block_yolo[0] = 0;
-            if (done) {
-                break;
-            }
-        }
-
-        if (strlen(block_slam) > 0) {
-            printf("SLAM: %s\n", block_slam);
-            bool done = (strcmp(block_slam, "quit") == 0);
-            block_slam[0] = 0;
-            if (done) {
-                break;
-            }
-        }
-
-        if (strlen(block_hands) > 0) {
-            printf("GANHands: %s\n", block_hands);
-            bool done = (strcmp(block_hands, "quit") == 0);
-            block_hands[0] = 0;
-            if (done) {
-                break;
-            }
-        }
-
-        sem_post(sem_cons_yolo);
-        sem_post(sem_cons_slam);
-        sem_post(sem_cons_hands);
-
-    }
+    // Wait for the threads to finish
+    // Wait for thread t1 to finish
+    yoloThread.join();
+    slamThread.join();
+    handsThread.join();
 
     // cleanup
     sem_close(sem_prod_yolo);
@@ -131,5 +127,4 @@ int main() {
     detach_memory_block(block_slam);
     detach_memory_block(block_hands);
 
-    return 0;
 }
