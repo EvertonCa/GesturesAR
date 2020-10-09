@@ -28,6 +28,8 @@ add_executable(SlamGetMessage src/slam_get_message.cpp includes/shared_memory.h 
 add_executable(YoloGetMessage src/yolo_get_message.cpp includes/shared_memory.h src/shared_memory.cpp)
 add_executable(HandsGetMessage src/hands_get_message.cpp includes/shared_memory.h src/shared_memory.cpp)
 
+add_executable(MessagesHandler src/messages_handler.cpp includes/shared_memory.h src/shared_memory.cpp)
+
 add_executable(VirtualCamera src/virtual_camera.cpp)
 
 target_link_libraries(ShareCam ${OpenCV_LIBS})
