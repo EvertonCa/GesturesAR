@@ -24,10 +24,6 @@ add_executable(ShareCam src/share_cam.cpp ${VIRTUAL_CAMERA_SOURCE} ${PROJECT_SOU
 add_executable(SlamGetCam src/slam_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(YoloGetCam src/yolo_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 
-add_executable(SlamGetMessage src/slam_get_message.cpp includes/shared_memory.h src/shared_memory.cpp)
-add_executable(YoloGetMessage src/yolo_get_message.cpp includes/shared_memory.h src/shared_memory.cpp)
-add_executable(HandsGetMessage src/hands_get_message.cpp includes/shared_memory.h src/shared_memory.cpp)
-
 add_executable(MessagesHandler src/messages_handler.cpp includes/shared_memory.h src/shared_memory.cpp)
 
 add_executable(VirtualCamera src/virtual_camera.cpp)
