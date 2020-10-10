@@ -180,7 +180,7 @@ class ARtest(ShowBase):
             contador += 1
             if (contador > 1):
                 vector3f = LVecBase3f(x, y, z)
-                quaternion = LQuaternion(qw, qx, qy, qz)
+                quaternion = LQuaternion(qw, qz, qy, qx)
                 cameraPos = [vector3f, quaternion]
                 positionArray.append(cameraPos)
                 contador = 0
