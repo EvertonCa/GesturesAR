@@ -24,7 +24,7 @@ echo "Sharing Camera Feed..."
 # starts the listener for the messages sent by GANHands in a new terminal
 gnome-terminal -- bash -c 'cd SharedMemory/python/ && echo "Listening for Messages..." && python3 messages_handler.py; sleep 1'
 
-echo "Listening for Messages"
+echo "Listening for Messages..."
 
 # starts ORB-SLAM2 in a new terminal
 gnome-terminal -- bash -c 'cd ORB-SLAM/ORB_SLAM2/ && echo "Starting ORB-SLAM2..." && ./Examples/Monocular/mono_tum Vocabulary/ORBvoc.txt Examples/Monocular/TUM1.yaml; sleep 1'
