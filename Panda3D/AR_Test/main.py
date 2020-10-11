@@ -161,8 +161,8 @@ class ARtest(ShowBase):
 
         if(globalGanCounter < 5866):
             self.ganNodes["Node{0}".format(actualGanJoint)].setPos(ganPositionArray[globalGanCounter])
-            self.ganNodes["Node{0}".format(actualGanJoint)].reparentTo(self.render)
-            self.ganNodes["Node{0}".format(actualGanJoint)].show()
+            #self.ganNodes["Node{0}".format(actualGanJoint)].reparentTo(self.render)
+            #self.ganNodes["Node{0}".format(actualGanJoint)].show()
             globalGanCounter += 1
             actualGanJoint += 1
             if(actualGanJoint == 21):
@@ -179,6 +179,8 @@ class ARtest(ShowBase):
             cNode = CollisionNode("GanNode" + str(i))
             cNode.addSolid(CollisionSphere(0, 0, 0, 0.02))
             self.ganNodes["Node{0}".format(i)] = cNode
+            self.ganNodes["Node{0}".format(actualGanJoint)].reparentTo(self.render)
+            self.ganNodes["Node{0}".format(actualGanJoint)].show()
 
     def fillGanArray(self):
         global ganPositionArray
