@@ -2,20 +2,25 @@ import sys
 from direct.actor.Actor import Actor
 from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Filename, Point2, TextNode, CollisionTraverser, \
-    CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, CollisionCapsule, BitMask32, LVecBase3f, LQuaternion
+    CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, CollisionCapsule, BitMask32, LVecBase3f, LQuaternion, \
+    CollisionSphere
 from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
 from time import sleep
 import gltf
 
-loadPrcFileData("", "textures-power-2 none") #the webcam feed can not be made into a power of two texture
+loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
 loadPrcFileData("", "show-frame-rate-meter 1") #show fps
 loadPrcFileData("", "sync-video 0") #turn off v-sync
 loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind the calculted positions. this is a try to reduce the lag.
 
 positionArray = []
 globalCounter = 0
+
+ganPositionArray = []
+globalGanCounter = 0
+actualGanJoint = 0
 
 def genLabelText(text, i, self):
     return OnscreenText(text=text, parent=self.a2dTopLeft, scale=.06,
@@ -42,6 +47,8 @@ class ARtest(ShowBase):
         self.readFile()
 
         self.fillArray()
+
+        self.fillGanArray()
 
         self.title = OnscreenText(text="Simulação do TCC",
                                   fg=(1, 1, 1, 1), parent=self.a2dBottomRight,
@@ -138,8 +145,60 @@ class ARtest(ShowBase):
         self.txtLines = file.readlines()
         file.close()
 
+        filegan = open("coordenadas.txt", "r")
+        self.ganTxtLines = filegan.readlines()
+        filegan.close()
+
     def callBackFunction(self):
-        self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
+        self.setGanNodes()
+        #self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
+        self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
+
+    def setGanNodesPosition(self, task):
+        global globalGanCounter
+        global ganPositionArray
+        global actualGanJoint
+
+        if(globalGanCounter < 5866):
+            self.ganNodes["Node{0}".format(actualGanJoint)].setPos(ganPositionArray[globalGanCounter])
+            self.ganNodes["Node{0}".format(actualGanJoint)].reparentTo(self.render)
+            self.ganNodes["Node{0}".format(actualGanJoint)].show()
+            globalGanCounter += 1
+            actualGanJoint += 1
+            if(actualGanJoint == 21):
+                actualGanJoint = 0
+
+        sleep(0.033)#Wait until next iteration
+
+        return Task.cont
+
+    def setGanNodes(self):
+        self.ganNodes = {}
+
+        for i in range(21):
+            cNode = CollisionNode("GanNode" + str(i))
+            cNode.addSolid(CollisionSphere(0, 0, 0, 0.02))
+            self.ganNodes["Node{0}".format(i)] = cNode
+
+    def fillGanArray(self):
+        global ganPositionArray
+
+        contador = 0
+        x = 0
+        y = 0
+        z = 0
+
+        for line in self.ganTxtLines:
+            if (contador % 5 == 2):
+                contador += 1
+                continue
+            splitedString = line.split()
+            x = float(splitedString[0]) / 100
+            y = float(splitedString[2]) / 100
+            z = float(splitedString[1]) / 100
+            vector3f = LVecBase3f(x, y, z)
+            ganPositionArray.append(vector3f)
+            contador += 1
 
     def refreshCameraPosition(self, task):
         global globalCounter
@@ -184,11 +243,6 @@ class ARtest(ShowBase):
                 cameraPos = [vector3f, quaternion]
                 positionArray.append(cameraPos)
                 contador = 0
-
-
-    def reloadCam(self):
-        self.cam.setPos(0, 0, 0)
-        print(self.cam.getPos())
 
     def loadHandJoints(self):
         # Joints do dedo mindinho
@@ -237,7 +291,7 @@ class ARtest(ShowBase):
             self.define_capsule_collision(finger)
 
     def defineKeys(self):
-        self.accept('escape', self.reloadCam)
+        self.accept('escape', sys.exit)
         self.accept('1', self.changePerspective, [-60, -60])
         self.accept('2', self.changePerspective, [-60, 60])
         self.accept('3', self.moveFingers)
