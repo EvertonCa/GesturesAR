@@ -7,7 +7,7 @@ if __name__ == "__main__":
         #p.stdin.write(value.encode('utf_8'))
         #p.stdin.flush()
         result = p.stdout.readline().strip().decode()
-        print(result[:4])
+        print(result)
 
         if result[:4] == "YOLO":
             continue
