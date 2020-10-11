@@ -17,6 +17,8 @@
 int main() {
     //cv::namedWindow("Share Cam", cv::WINDOW_AUTOSIZE);
     cv::VideoCapture cap(REAL_WEBCAM);
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
     if (!cap.isOpened())
         return -1;
 
