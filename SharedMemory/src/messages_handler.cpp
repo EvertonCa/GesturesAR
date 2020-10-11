@@ -28,7 +28,6 @@ void get_message(sem_t *sem_prod, sem_t *sem_cons, char *block, char *modulo) {
 
         sem_post(sem_cons);
     }
-
 }
 
 int main() {
@@ -111,7 +110,6 @@ int main() {
     std::thread handsThread(get_message, sem_prod_hands, sem_cons_hands, block_hands, handsText);
 
     // Wait for the threads to finish
-    // Wait for thread t1 to finish
     yoloThread.join();
     slamThread.join();
     handsThread.join();

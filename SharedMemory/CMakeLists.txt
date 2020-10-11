@@ -28,6 +28,8 @@ add_executable(MessagesHandler src/messages_handler.cpp includes/shared_memory.h
 
 add_executable(VirtualCamera src/virtual_camera.cpp)
 
+add_executable(Socket src/socket.cpp)
+
 target_link_libraries(ShareCam ${OpenCV_LIBS})
 target_link_libraries(SlamGetCam ${OpenCV_LIBS})
 target_link_libraries(YoloGetCam ${OpenCV_LIBS})
