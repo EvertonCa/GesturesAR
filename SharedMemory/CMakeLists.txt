@@ -19,7 +19,7 @@ set(VIRTUAL_CAMERA_SOURCE
         includes/virtual_camera_handler.h
         )
 
-add_executable(Destroy src/destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
+add_executable(Cleanup src/destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(ShareCam src/share_cam.cpp ${VIRTUAL_CAMERA_SOURCE} ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(SlamGetCam src/slam_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(YoloGetCam src/yolo_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})

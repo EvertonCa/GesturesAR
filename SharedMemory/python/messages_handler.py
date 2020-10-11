@@ -1,7 +1,7 @@
 from subprocess import Popen, PIPE
 
 if __name__ == "__main__":
-    p = Popen(['../cmake-build-debug/Tester'], shell=True, stdout=PIPE, stdin=PIPE)
+    p = Popen(['../cmake-build-debug/MessagesHandler'], shell=True, stdout=PIPE, stdin=PIPE)
     while True:
         #value = bytes(value, 'UTF-8')  # Needed in Python 3.
         #p.stdin.write(value.encode('utf_8'))
