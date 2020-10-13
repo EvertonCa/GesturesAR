@@ -15,7 +15,6 @@ def get_messages(module):
         #p.stdin.flush()
         result = p.stdout.readline().strip().decode()
         print(result)
-        print(module)
 
 
 if __name__ == "__main__":
