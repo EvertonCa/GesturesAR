@@ -21,18 +21,27 @@ def crop_image(I, polygon):
             minY = y
         if y > maxY:
             maxY = y
-
+    if minX < 0:
+        minX = 0
+    if maxX > I.shape[1]:
+        maxX = I.shape[1]
+    if minY < 0:
+        minY = 0
+    if maxY > I.shape[0]:
+        maxY = I.shape[0]
     # Go over the points in the image if not check if thay are inside the polygon or not
     cropedImage = np.zeros_like(I)
-
-    for y in range(minY, maxY+1):
-        for x in range(minX, maxX+1):
+    print(minX, maxX, minY, maxY)
+    print(I.shape)
+    for y in range(minY, maxY):
+        for x in range(minX, maxX):
             if cv2.pointPolygonTest(np.asarray(polygon), (x, y), False) >= 0:
                 cropedImage[y, x, 0] = I[y, x, 0]
                 cropedImage[y, x, 1] = I[y, x, 1]
                 cropedImage[y, x, 2] = I[y, x, 2]
 
     # Now we can crop again just the envloping rectangle
+    print(minY, maxY, minX, maxX)
     finalImage = cropedImage[minY:maxY, minX:maxX]
     #cv2.imwrite('finalImage.jpg', finalImage)
 
@@ -56,8 +65,12 @@ def crop_image(I, polygon):
     # Find affine transform
     M = cv2.getPerspectiveTransform(np.asarray(polygonForTransform).astype(np.float32),
                                     np.asarray(polygonStrecth).astype(np.float32))
-
+    #if sum(M) <
     # Warp one image to the other
+    print(finalImage)#, M, (finalImage.shape[1], finalImage.shape[0]))
+    print(M)#, M, (finalImage.shape[1], finalImage.shape[0]))
+    if minY == maxY or minX == maxX:
+        return None
     warpedImage = cv2.warpPerspective(finalImage, M, (finalImage.shape[1], finalImage.shape[0]))
     #cv2.imwrite('warpedImage.jpg', warpedImage)
 

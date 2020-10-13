@@ -13,9 +13,9 @@ from multiprocessing import Pool, TimeoutError, cpu_count
 from functools import partial
 from crop import crop_image
 
-#size_image = (640, 480)
+size_image = (640, 480)
 #size_image = (1280, 720)
-size_image = (1920, 1080)
+#size_image = (1920, 1080)
 MIN_MATCH_COUNT = 10
 
 rating_dictionary = {
@@ -85,7 +85,10 @@ def load_features_database(name, photo_directory=''):
 def yolo2coordinates(yoloparameters_txt, imgshape):
     boundbox_values = yoloparameters_txt.replace('\t', '').replace('Object Detected: ', '').replace('(center_x:','').replace('  center_y: ', '').replace('  width: ', '').replace('  height: ', '').replace(')', '').replace('\n', '').replace('%', '')
     boundbox_values = boundbox_values.split(" ")
-    boundbox_values = list(map(float, boundbox_values[2:]))
+    if len(boundbox_values) == 5:
+        boundbox_values = list(map(float, boundbox_values[1:]))
+    else:
+        boundbox_values = list(map(float, boundbox_values[2:]))
 
     bx = boundbox_values[0] * imgshape[1]
     by = boundbox_values[1] * imgshape[0]
@@ -226,7 +229,7 @@ def get_best_marker(img1, yolo):
 
     if len(l3) <= 0:
         print("Not enough matches are found")
-        sys.exit()
+        return None
     elif len(l3) > 1:
         best = angle_check(des3, des2, l3)
         print(best)
@@ -248,6 +251,8 @@ def get_best_marker(img1, yolo):
 
         imgbest = imgbest[coordinates[0]:coordinates[1], coordinates[2]:coordinates[3]]
         img3 = generate_matches_image(imgbest, img1)
+        if img3 is None:
+            return None
         cv2.imwrite('marcador.jpg', img3)
 
         return best
@@ -293,6 +298,9 @@ def draw_bb(img1, img_angle):
         print(img_angle.shape)
         h, w = img_angle.shape
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+        print(pts, M)
+        if M is None:
+            return None
         dst = cv2.perspectiveTransform(pts, M)
         img1 = cv2.polylines(img1, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
     else:
@@ -330,7 +338,7 @@ if __name__ == '__main__':
     best_angle_name = get_best_marker(img1, yolo)
     if best_angle_name is not None:
         txtfile = best_angle_name.replace(os.path.join(photo_directory[:-1], ''),
-                               os.path.join(photo_directory[:-1], 'bb', '')).replace(file_type, '.txt')
+                                          os.path.join(photo_directory[:-1], 'bb', '')).replace(file_type, '.txt')
         f = open(txtfile, "r")
         boundbox_txt = f.readline()
 
