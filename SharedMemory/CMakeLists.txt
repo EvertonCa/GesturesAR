@@ -21,16 +21,15 @@ set(VIRTUAL_CAMERA_SOURCE
 
 add_executable(Cleanup src/destroy_shmem.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 add_executable(ShareCam src/share_cam.cpp ${VIRTUAL_CAMERA_SOURCE} ${PROJECT_SOURCES} ${PROJECT_HEADERS})
-add_executable(SlamGetCam src/slam_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
-add_executable(YoloGetCam src/yolo_get_cam.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 
 add_executable(MessagesHandler src/messages_handler.cpp includes/shared_memory.h src/shared_memory.cpp)
+add_executable(GetMessageYolo src/get_message_yolo.cpp includes/shared_memory.h src/shared_memory.cpp)
+add_executable(GetMessageSlam src/get_message_slam.cpp includes/shared_memory.h src/shared_memory.cpp)
+add_executable(GetMessageHands src/get_message_hands.cpp includes/shared_memory.h src/shared_memory.cpp)
 
 add_executable(VirtualCamera src/virtual_camera.cpp)
 
 add_executable(Tester src/tester.cpp)
 
 target_link_libraries(ShareCam ${OpenCV_LIBS})
-target_link_libraries(SlamGetCam ${OpenCV_LIBS})
-target_link_libraries(YoloGetCam ${OpenCV_LIBS})
 target_link_libraries(VirtualCamera ${OpenCV_LIBS})
