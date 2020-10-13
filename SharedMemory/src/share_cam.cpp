@@ -8,6 +8,7 @@
 #include <opencv2/highgui.hpp>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <iostream>
 
 #include "../includes/shared_memory.h"
 #include "../includes/camera_parameters.h"
@@ -17,8 +18,10 @@
 int main() {
     //cv::namedWindow("Share Cam", cv::WINDOW_AUTOSIZE);
     cv::VideoCapture cap(REAL_WEBCAM);
+    cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('M', 'J', 'P', 'G'));
     cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+    cap.set(CV_CAP_PROP_AUTOFOCUS, 0);
     if (!cap.isOpened())
         return -1;
 
@@ -79,6 +82,8 @@ int main() {
     VirtualCameraHandler virtualCam2(cap, VIRTUAL_WEBCAM_2);
 
     cv::Mat frame;
+
+    //std::cout << cap << std::endl;
 
     while (true) {
 

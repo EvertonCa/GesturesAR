@@ -6,33 +6,32 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
-
+#include <string>
 
 int main() {
     cv::namedWindow("Test Cam", cv::WINDOW_AUTOSIZE);
-    cv::VideoCapture cap(3);
-
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, 1240);
+    cv::VideoCapture cap(0);
+    cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('M', 'J', 'P', 'G'));
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+    cap.set(CV_CAP_PROP_AUTOFOCUS, 0);
 
     if (!cap.isOpened())
         return -1;
 
     cv::Mat frame;
-
+    int i = 0;
 
     while (true) {
 
         cap >> frame;
 
-        std::cout << frame.size << std::endl;
-
         cv::imshow("Test Cam", frame);
 
         // runs until ESC key is pressed
         if (cv::waitKey(1000/30) == 27) {
-            std::cout << "quit" << std::endl;
-            break;
+            cv::imwrite("frame" + std::to_string(i)+ ".jpg", frame);
+            i++;
         }
     }
 

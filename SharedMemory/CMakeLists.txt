@@ -31,5 +31,8 @@ add_executable(VirtualCamera src/virtual_camera.cpp)
 
 add_executable(Tester src/tester.cpp)
 
+
+
 target_link_libraries(ShareCam ${OpenCV_LIBS})
 target_link_libraries(VirtualCamera ${OpenCV_LIBS})
+target_link_libraries(Tester ${OpenCV_LIBS})
