@@ -13,8 +13,8 @@ from multiprocessing import Pool, TimeoutError, cpu_count
 from functools import partial
 from crop import crop_image
 
-size_image = (640, 480)
-#size_image = (1280, 720)
+#size_image = (640, 480)
+size_image = (1280, 720)
 #size_image = (1920, 1080)
 MIN_MATCH_COUNT = 10
 
@@ -60,24 +60,30 @@ def angle_check_multicore(i, des, des2, namefile_list, MIN_MATCH_COUNT=10):
 
 
 def load_features_database(name, photo_directory=''):
-    with open(photo_directory + name + "_kp"+str(size_image), 'rb') as file_input:
-        matrix = pickle.load(file_input)
+    kp = list()
+    des = list()
+    namefile_list = list()
 
-    kp = []
-    i = 0
-    for index in matrix:
-        kp.append([])
-        for point in index:
-            temp = cv2.KeyPoint(x=point[0][0], y=point[0][1], _size=point[1], _angle=point[2], _response=point[3],
-                                _octave=point[4], _class_id=point[5])
-            kp[i].append(temp)
-        i += 1
+    for label in rating_dictionary:
+        with open(os.path.join(photo_directory, rating_dictionary[label], name) + "_kp"+str(size_image), 'rb') as file_input:
+            matrix = pickle.load(file_input)
 
-    with open(photo_directory + name + "_des"+str(size_image), 'rb') as file_input:
-        des = pickle.load(file_input)
+        keypoints = []
+        i = 0
+        for index in matrix:
+            keypoints.append([])
+            for point in index:
+                temp = cv2.KeyPoint(x=point[0][0], y=point[0][1], _size=point[1], _angle=point[2], _response=point[3],
+                                    _octave=point[4], _class_id=point[5])
+                keypoints[i].append(temp)
+            i += 1
+        kp.append(keypoints)
 
-    with open(photo_directory + name + "_list"+str(size_image), 'rb') as file_input:
-        namefile_list = pickle.load(file_input)
+        with open(os.path.join(photo_directory, rating_dictionary[label], name) + "_des"+str(size_image), 'rb') as file_input:
+            des.append(pickle.load(file_input))
+
+        with open(os.path.join(photo_directory, rating_dictionary[label], name) + "_list"+str(size_image), 'rb') as file_input:
+            namefile_list.append(pickle.load(file_input))
 
     return kp, des, namefile_list
 
@@ -201,7 +207,7 @@ def get_best_marker(img1, yolo):
     start_all_time = time.time()
     start_time = time.time()
 
-    kp, des, namefile_list = load_features_database('sift_database', os.path.join('SIFT_database', rating_dictionary[label], ''))
+    kp, des, namefile_list = load_features_database('sift_database', os.path.join('SIFT_database', ''))
     print("--- LOAD %s seconds ---" % (time.time() - start_time))
     start_time = time.time()
 
@@ -214,7 +220,7 @@ def get_best_marker(img1, yolo):
     arange_cpu = np.arange(cpu_count())
 
     with Pool(cpu_count()) as p:
-        resp = p.map(partial(angle_check_multicore, des=des, des2=des2, namefile_list=namefile_list), arange_cpu)
+        resp = p.map(partial(angle_check_multicore, des=des[label], des2=des2, namefile_list=namefile_list[label]), arange_cpu)
     print("--- END multicore SIFT %s seconds ---" % (time.time() - start_time))
     start_time = time.time()
 
@@ -224,8 +230,8 @@ def get_best_marker(img1, yolo):
     for i in resp:
         if i is not None:
             l3.append(i)
-            kp3.append(kp[namefile_list.index(i)])
-            des3.append(des[namefile_list.index(i)])
+            kp3.append(kp[label][namefile_list[label].index(i)])
+            des3.append(des[label][namefile_list[label].index(i)])
 
     if len(l3) <= 0:
         print("Not enough matches are found")
@@ -240,10 +246,10 @@ def get_best_marker(img1, yolo):
     start_time = time.time()
 
     if best is not None:
-        best_index = namefile_list.index(best)
+        best_index = namefile_list[label].index(best)
         # print(best_index)
         imgbest = cv2.imread(best, cv2.IMREAD_GRAYSCALE)  # queryImage
-        txtfile = namefile_list[best_index].replace(os.path.join(rating_dictionary[label], ''), os.path.join(
+        txtfile = namefile_list[label][best_index].replace(os.path.join(rating_dictionary[label], ''), os.path.join(
             rating_dictionary[label], 'bb', '')).replace('.jpg', '.txt')
         f = open(txtfile, "r")
         boundbox_txt = f.readline()
@@ -255,13 +261,16 @@ def get_best_marker(img1, yolo):
             return None
         cv2.imwrite('marcador.jpg', img3)
 
+        print("--- marker %s seconds ---" % (time.time() - start_time))
+        print("--- TUDO %s seconds ---" % (time.time() - start_all_time))
+
         return best
     else:
         print("Not enough matches are found")
+        print("--- marker %s seconds ---" % (time.time() - start_time))
+        print("--- TUDO %s seconds ---" % (time.time() - start_all_time))
 
-    print("--- marker %s seconds ---" % (time.time() - start_time))
-    print("--- TUDO %s seconds ---" % (time.time() - start_all_time))
-
+    
 
 def save_all_database():
     start_time = time.time()
@@ -295,10 +304,10 @@ def draw_bb(img1, img_angle):
         dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
         matchesMask = mask.ravel().tolist()
-        print(img_angle.shape)
+        #print(img_angle.shape)
         h, w = img_angle.shape
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-        print(pts, M)
+        #print(pts, M)
         if M is None:
             return None
         dst = cv2.perspectiveTransform(pts, M)
@@ -330,7 +339,7 @@ if __name__ == '__main__':
     img1 = cv2.imread(name_img1, 0)  # imagem da webcam
     img1 = cv2.resize(img1, size_image)
 
-    save_all_database()
+    #save_all_database()
 
     #print(img1.shape)
     photo_directory = os.path.join('SIFT_database', rating_dictionary[classe], '')
