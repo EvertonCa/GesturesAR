@@ -1,4 +1,5 @@
 from subprocess import Popen, PIPE
+from ARScene import *
 import threading
 
 
@@ -30,9 +31,12 @@ if __name__ == "__main__":
     # starting hands thread
     hands_thread.start()
 
+    pandaScene = ARScene()
+    pandaScene.run()
+
     # wait until yolo thread is completely executed
-    yolo_thread.join()
+    #yolo_thread.join()
     # wait until slam thread is completely executed
-    slam_thread.join()
+    #slam_thread.join()
     # wait until hands thread is completely executed
-    hands_thread.join()
+    #hands_thread.join()
