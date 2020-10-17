@@ -31,6 +31,7 @@ if __name__ == "__main__":
     # starting hands thread
     hands_thread.start()
 
+    # run panda3d instance
     pandaScene = ARScene()
     pandaScene.run()
 
