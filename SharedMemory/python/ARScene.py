@@ -13,6 +13,8 @@ loadPrcFileData("", "show-frame-rate-meter 1") #show fps
 loadPrcFileData("", "sync-video 0") #turn off v-sync
 loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind the calculted positions. this is a try to reduce the lag.
 
+canUpdateSlam = False
+
 positionArray = []
 globalCounter = 0
 
@@ -47,6 +49,28 @@ def genLabelText(text, i, self):
                         pos=(0.06, -.08 * i), fg=(1, 1, 1, 1),
                         shadow=(0, 0, 0, .5), align=TextNode.ALeft)
 
+def updateSlam(text):
+    global positionArray
+    global canUpdateSlam
+
+    if len(text) > 0:
+
+        splitedString = text.split()
+        x = float(splitedString[1]) * 10
+        y = float(splitedString[2]) * 10
+        z = float(splitedString[3]) * 10
+        qx = float(splitedString[4])
+        qy = float(splitedString[5])
+        qz = float(splitedString[6])
+        qw = float(splitedString[7])
+
+        vector3f = LVecBase3f(x, z, -y)
+        quaternion = LQuaternion(qw, qx, qz, -qy)
+        cameraPos = [vector3f, quaternion]
+        positionArray = cameraPos
+        canUpdateSlam = True
+
+
 
 class ARScene(ShowBase):
     def __init__(self):
@@ -62,11 +86,8 @@ class ARScene(ShowBase):
 
         self.defineKeys()
 
-        #self.readFile()
-
-        #self.fillArray()
-
-        #self.fillGanArray()
+        # for x, option in enumerate(WebcamVideo.getOptions()):
+        #     print(option, x)
 
         self.title = OnscreenText(text="TCC Simulation",
                                   fg=(1, 1, 1, 1), parent=self.a2dBottomRight,
@@ -97,11 +118,20 @@ class ARScene(ShowBase):
         self.ar = ARToolKit.make(self.cam, Filename(self.mainDir, "ar/camera_para.dat"), 1)
 
         # load a model to visualize the tracking
-        self.addObject()
+        #self.addObject()
+
+        self.ball = self.loader.loadModel("models/ball")
+
+        self.ball.reparentTo(self.render)
+
+        self.ball.setScale(0.25, 0.25, 0.25)
+
+        self.ball.setPos(0, 5, 0)
 
         # updating the models positions each frame.
         sleep(1)  # some webcams are quite slow to start up so we add some safety
         self.taskMgr.add(self.updatePatterns, "update-patterns")
+        self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
 
 
     def addObject(self):
@@ -130,18 +160,8 @@ class ARScene(ShowBase):
         self.ar.analyze(self.tex, True)
         return Task.cont
 
-    def readFile(self):
-        file = open("Trajetoria.txt", "r")
-        self.txtLines = file.readlines()
-        file.close()
-
-        filegan = open("coordenadas.txt", "r")
-        self.ganTxtLines = filegan.readlines()
-        filegan.close()
-
     def callBackFunction(self):
         self.setGanNodes()
-        #self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
         #self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
 
     def setGanNodesPosition(self, task):
@@ -322,48 +342,18 @@ class ARScene(ShowBase):
 
 
     def refreshCameraPosition(self, task):
-        global globalCounter
+        global canUpdateSlam
         global positionArray
 
-        if(globalCounter <= 816):
-            quaternion = LQuaternion(positionArray[globalCounter][1][0], positionArray[globalCounter][1][1],
-                                     positionArray[globalCounter][1][2], positionArray[globalCounter][1][3])
-            self.cam.setPosQuat(positionArray[globalCounter][0], quaternion)
-            globalCounter += 1
+        if(canUpdateSlam):
+            quaternion = LQuaternion(positionArray[1][0], positionArray[1][1],
+                                     positionArray[1][2], positionArray[1][3])
+            self.cam.setPosQuat(positionArray[0], quaternion)
+            canUpdateSlam = False
 
-        sleep(0.033) #Wait until next iteration
+        #sleep(0.033) #Wait until next iteration
 
         return Task.cont
-
-    def fillArray(self):
-        global positionArray
-
-        contador = 0
-        x = 0
-        y = 0
-        z = 0
-        qx = 0
-        qy = 0
-        qz = 0
-        qw = 0
-        for line in self.txtLines:
-            splitedString = line.split()
-            if (contador == 0):
-                x = float(splitedString[1]) * 10
-                y = float(splitedString[2]) * 10
-                z = float(splitedString[3]) * 10
-            elif (contador == 1):
-                qx = float(splitedString[0])
-                qy = float(splitedString[1])
-                qz = float(splitedString[2])
-                qw = float(splitedString[3])
-            contador += 1
-            if (contador > 1):
-                vector3f = LVecBase3f(x, y, z)
-                quaternion = LQuaternion(qw, qz, qy, qx)
-                cameraPos = [vector3f, quaternion]
-                positionArray.append(cameraPos)
-                contador = 0
 
 
     def defineKeys(self):
