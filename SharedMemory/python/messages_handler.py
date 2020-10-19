@@ -17,6 +17,8 @@ def get_messages(module):
         result = p.stdout.readline().strip().decode()
         if module == "SLAM":
             updateSlam(result)
+        elif module == "HANDS":
+            updateHands(result)
 
 
 if __name__ == "__main__":
@@ -24,12 +26,12 @@ if __name__ == "__main__":
     yolo_thread = threading.Thread(target=get_messages, args=("YOLO",))
     slam_thread = threading.Thread(target=get_messages, args=("SLAM",))
     hands_thread = threading.Thread(target=get_messages, args=("HANDS",))
-    #
-    # # starting yolo thread
+
+    # starting yolo thread
     yolo_thread.start()
-    # # starting slam thread
+    # starting slam thread
     slam_thread.start()
-    # # starting hands thread
+    # starting hands thread
     hands_thread.start()
 
     # run panda3d instance
