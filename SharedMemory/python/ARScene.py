@@ -17,12 +17,19 @@ canUpdateSlam = False
 canUpdateHands = False
 
 positionArray = []
+globalCounter = 0
+
 ganPositionArray = []
+
+globalGanCounter = 0
+actualGanJoint = 0
+
 
 def genLabelText(text, i, self):
     return OnscreenText(text=text, parent=self.a2dTopLeft, scale=.04,
                         pos=(0.06, -.08 * i), fg=(1, 1, 1, 1),
                         shadow=(0, 0, 0, .5), align=TextNode.ALeft)
+
 
 def updateSlam(text):
     global positionArray
@@ -45,10 +52,12 @@ def updateSlam(text):
         positionArray = cameraPos
         canUpdateSlam = True
 
+
 def updateHands(text):
     global ganPositionArray
     global canUpdateHands
-    if (canUpdateHands == False):
+
+    if not canUpdateHands:
         ganPositionArray = []
 
         splitText = text.split('][')
@@ -57,11 +66,17 @@ def updateHands(text):
             temp = line.replace('"', '').replace('[', '').replace(',', '').replace(';', '').replace(']', '').replace(
                 '\n',
                 '')
+            f = open("hands.txt", "a")
+            f.write(temp + "\n")
+            f.close()
             if len(temp) > 2:
                 x, y, z = temp.split(" ")
-                x = (float(x) / -300)
-                y = float(y) / -100
-                z = float(z) / 300
+                a = float(x)
+                b = float(y)
+                c = float(z)
+                x = (a / (-600))
+                y = (c / 50)
+                z = (b / 600)
                 vector3f = LVecBase3f(x, y, z)
                 ganPositionArray.append(vector3f)
 
@@ -114,12 +129,18 @@ class ARScene(ShowBase):
         #self.addObject()
 
         self.ball = self.loader.loadModel("models/ball")
-
         self.ball.reparentTo(self.render)
-
         self.ball.setScale(0.25, 0.25, 0.25)
+        self.ball.setPos(0.4, 3, 0)
 
-        self.ball.setPos(0, 5, 0)
+        self.ballSphere = self.ball.find("**/ball")
+        self.ballSphere.node().setFromCollideMask(BitMask32.bit(1))
+        self.ballSphere.node().setIntoCollideMask(BitMask32.allOff())
+        self.ballSphere.show()
+
+        self.cTrav.addCollider(self.ballSphere, self.pusher)
+
+        self.pusher.addCollider(self.ballSphere, self.ball, self.drive.node())
 
         # updating the models positions each frame.
         sleep(1)  # some webcams are quite slow to start up so we add some safety
@@ -127,7 +148,7 @@ class ARScene(ShowBase):
         #self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
         self.setGanNodes()
         self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
-
+        self.cTrav.showCollisions(self.render)
 
     def addObject(self):
         self.axis = self.loader.loadModel("models/ball")
@@ -161,11 +182,13 @@ class ARScene(ShowBase):
 
         if(canUpdateHands):
             for i in range(len(ganPositionArray)):
+                print str(i) + " --> " + str(ganPositionArray[i])
                 self.ganNodes["Node" + str(i)].setPos(ganPositionArray[i])
                 self.ganNodes["Node" + str(i)].show()
                 print self.ganNodes["Node" + str(i)].getPos()
 
             canUpdateHands = False
+            print '\n\n\n'
         return Task.cont
 
     def setGanNodes(self):
