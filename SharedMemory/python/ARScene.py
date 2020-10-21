@@ -34,10 +34,11 @@ def genLabelText(text, i, self):
 def updateSlam(text):
     global positionArray
     global canUpdateSlam
+    global globalCounter
 
     if len(text) > 0:
-
         splitedString = text.split()
+        globalCounter = int(splitedString[0])
         x = float(splitedString[1]) * 10
         y = float(splitedString[2]) * 10
         z = float(splitedString[3]) * 10
@@ -51,6 +52,7 @@ def updateSlam(text):
         cameraPos = [vector3f, quaternion]
         positionArray = cameraPos
         canUpdateSlam = True
+        print "FORA " + str(globalCounter)
 
 
 def updateHands(text):
@@ -147,7 +149,7 @@ class ARScene(ShowBase):
         # updating the models positions each frame.
         sleep(1)  # some webcams are quite slow to start up so we add some safety
         self.taskMgr.add(self.updatePatterns, "update-patterns")
-        #self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
+        self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
         self.setGanNodes()
         self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
         self.cTrav.showCollisions(self.render)
@@ -184,13 +186,13 @@ class ARScene(ShowBase):
 
         if(canUpdateHands):
             for i in range(len(ganPositionArray)):
-                print str(i) + " --> " + str(ganPositionArray[i])
+                #print (str(i) + " --> " + str(ganPositionArray[i]))
                 self.ganNodes["Node" + str(i)].setPos(ganPositionArray[i])
                 self.ganNodes["Node" + str(i)].show()
-                print self.ganNodes["Node" + str(i)].getPos()
+                #print (self.ganNodes["Node" + str(i)].getPos())
 
             canUpdateHands = False
-            print '\n\n\n'
+            #print ('\n\n\n')
         return Task.cont
 
     def setGanNodes(self):
@@ -207,12 +209,16 @@ class ARScene(ShowBase):
     def refreshCameraPosition(self, task):
         global canUpdateSlam
         global positionArray
+        global globalCounter
+
+        print "DENTRO " + str(globalCounter)
 
         if(canUpdateSlam):
             quaternion = LQuaternion(positionArray[1][0], positionArray[1][1],
                                      positionArray[1][2], positionArray[1][3])
             self.cam.setPosQuat(positionArray[0], quaternion)
             canUpdateSlam = False
+            self.onekeyText = genLabelText("[2] - " + str(globalCounter % 30), 3, self)
 
         return Task.cont
 

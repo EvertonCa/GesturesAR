@@ -42,4 +42,3 @@ echo "YOLOv4 started..."
 gnome-terminal -- bash -c 'cd GANeratedHands/GanHandsAPI/bin/Release/ && echo "Starting GANHands..." && ./GanHands; sleep 1'
 
 echo "GANHands started..."
-z
