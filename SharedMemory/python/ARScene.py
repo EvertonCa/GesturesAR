@@ -2,7 +2,7 @@ import sys
 from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Filename, Point2, TextNode, CollisionTraverser, \
     CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, BitMask32, LVecBase3f, LQuaternion, \
-    CollisionSphere, NodePath
+    CollisionSphere, NodePath, PStatClient
 from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
@@ -87,6 +87,8 @@ class ARScene(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
 
+        PStatClient.connect()
+
         self.cTrav = CollisionTraverser()
 
         self.cHandler = CollisionHandlerQueue()
@@ -103,7 +105,7 @@ class ARScene(ShowBase):
                                   shadow=(0, 0, 0, .5), scale=.08)
 
         #Windows WebCam
-        option = WebcamVideo.getOption(0)  # 0 here is default webcam, 1 would be second cam etc.
+        option = WebcamVideo.getOption(296)  # 0 here is default webcam, 1 would be second cam etc.
         self.tex = MovieTexture(option)
         self.tex.setTexturesPower2(0)
         self.tex.setKeepRamImage(True)

@@ -21,8 +21,10 @@ gnome-terminal -- bash -c 'cd SharedMemory/cmake-build-debug/ && echo "Sharing C
 
 echo "Sharing Camera Feed..."
 
+sleep 1
+
 # starts the listener for the messages sent by GANHands in a new terminal
-gnome-terminal -- bash -c 'cd SharedMemory/python/ && echo "Listening for Messages..." && python3 messages_handler.py; sleep 1'
+gnome-terminal -- bash -c 'source SharedMemory/python/venv2/bin/activate && cd SharedMemory/python/ && echo "Listening for Messages..." && python2.7 messages_handler.py; sleep 100'
 
 echo "Listening for Messages..."
 
@@ -40,3 +42,4 @@ echo "YOLOv4 started..."
 gnome-terminal -- bash -c 'cd GANeratedHands/GanHandsAPI/bin/Release/ && echo "Starting GANHands..." && ./GanHands; sleep 1'
 
 echo "GANHands started..."
+z
