@@ -283,7 +283,7 @@ def get_best_marker(img, yolo):
         img3 = generate_matches_image(imgbest, img)
         if img3 is None:
             return None
-        cv2.imwrite('marcador.jpg', img3)
+        cv2.imwrite('Maker.jpg', img3)
 
         print("--- marker %s seconds ---" % (time.time() - start_time))
         print("--- ALL %s seconds ---" % (time.time() - start_all_time))
@@ -388,6 +388,6 @@ if __name__ == '__main__':
 
         marker_angle = start_marker(yolo_values)
         if marker_angle is not None:
-            print('marcador.jpg')
+            print('Maker.jpg')
         else:
             print(None)
