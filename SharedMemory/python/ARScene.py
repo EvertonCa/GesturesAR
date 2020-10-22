@@ -76,9 +76,6 @@ def updateHands(text):
             temp = line.replace('"', '').replace('[', '').replace(',', '').replace(';', '').replace(']', '').replace(
                 '\n',
                 '')
-            f = open("hands.txt", "a")
-            f.write(temp + "\n")
-            f.close()
             if len(temp) > 2:
                 x, y, z = temp.split(" ")
                 a = float(x)
@@ -95,10 +92,9 @@ def updateHands(text):
 
 class ARScene(ShowBase):
     def __init__(self):
-        global canSendSlam
         ShowBase.__init__(self)
 
-        PStatClient.connect()
+        # PStatClient.connect()
 
         self.ball = None
 
@@ -142,6 +138,11 @@ class ARScene(ShowBase):
         # last parameter is the size of the pattern in panda-units.
         self.ar = ARToolKit.make(self.cam, Filename(self.mainDir, "ar/camera_para.dat"), 1)
 
+        # variables for the system
+        self.axis = self.loader.loadModel("models/ball")
+        self.ballSphere = self.axis.find("**/ball")
+        self.ganNodes = {}
+
         # load a model to visualize the tracking
         #self.addObject()
 
@@ -155,11 +156,8 @@ class ARScene(ShowBase):
         #self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
 
     def addObject(self):
-        self.axis = self.loader.loadModel("models/ball")
         self.axis.reparentTo(self.render)
         self.axis.setScale(0.5, 0.5, 0.5)
-
-        self.ballSphere = self.axis.find("**/ball")
         self.ballSphere.node().setFromCollideMask(BitMask32.bit(1))
         self.ballSphere.node().setIntoCollideMask(BitMask32.allOff())
         self.ballSphere.show()
@@ -196,8 +194,6 @@ class ARScene(ShowBase):
         return Task.cont
 
     def setGanNodes(self):
-        self.ganNodes = {}
-
         for i in range(21):
             cNode = CollisionNode("GanNode" + str(i))
             cNode.addSolid(CollisionSphere(0, 0, 0, 0.02))
