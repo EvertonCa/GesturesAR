@@ -9,6 +9,7 @@ from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
 from time import sleep
 import threading
+from DistanceCalibrator import DistanceCalibrator
 
 loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
 loadPrcFileData("", "show-frame-rate-meter 1") #show fps
@@ -17,6 +18,7 @@ loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind t
 
 canUpdateSlam = True
 canUpdateHands = False
+isObjectCreated = False
 
 positionArray = []
 globalCounter = 0
@@ -56,7 +58,7 @@ def updateSlam(text):
         cameraPos = [vector3f, quaternion, int(splitedString[0])]
         positionArray = cameraPos
         queueSlam.put(cameraPos)
-        print "Fora " + str(cameraPos) + " - Frame: " + splitedString[0]
+        #print "Fora " + str(cameraPos) + " - Frame: " + splitedString[0]
         #canUpdateSlam = True
         #print "FORA " + str(globalCounter) + str(canUpdateSlam)
 
@@ -97,6 +99,10 @@ class ARScene(ShowBase):
         ShowBase.__init__(self)
 
         PStatClient.connect()
+
+        self.ball = None
+
+        self.calibrator = DistanceCalibrator()
 
         self.cTrav = CollisionTraverser()
 
@@ -139,20 +145,6 @@ class ARScene(ShowBase):
         # load a model to visualize the tracking
         #self.addObject()
 
-        self.ball = self.loader.loadModel("models/ball")
-        self.ball.reparentTo(self.render)
-        self.ball.setScale(0.25, 0.25, 0.25)
-        self.ball.setPos(0.4, 3, 0)
-
-        self.ballSphere = self.ball.find("**/ball")
-        self.ballSphere.node().setFromCollideMask(BitMask32.bit(1))
-        self.ballSphere.node().setIntoCollideMask(BitMask32.allOff())
-        self.ballSphere.show()
-
-        self.cTrav.addCollider(self.ballSphere, self.pusher)
-
-        self.pusher.addCollider(self.ballSphere, self.ball, self.drive.node())
-
         # updating the models positions each frame.
         sleep(1)  # some webcams are quite slow to start up so we add some safety
         #self.taskMgr.add(self.updatePatterns, "update-patterns")
@@ -161,7 +153,6 @@ class ARScene(ShowBase):
         slam_thread.start()
         #self.setGanNodes()
         #self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
-        self.cTrav.showCollisions(self.render)
 
     def addObject(self):
         self.axis = self.loader.loadModel("models/ball")
@@ -231,7 +222,7 @@ class ARScene(ShowBase):
             array = queueSlam.get()
             quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
             self.cam.setPosQuat(array[0], quaternion)
-            print "Dentro " + str(array) + " - Frame: " + str(array[2])
+            #print "Dentro " + str(array) + " - Frame: " + str(array[2])
             print "COORDENADA CAMERA: " + str(self.cam.getPos())
 
         #self.cam.setPosQuat(positionArray[0], quaternion)
@@ -250,10 +241,20 @@ class ARScene(ShowBase):
         while True:
             if not queueSlam.empty():
                 array = queueSlam.get()
+                if self.calibrator.ready:
+                    temp2 = self.calibrator.convertSlamToWorld(array[0].getX(), array[0].getY(), array[0].getZ())
+                    print "Point SLAM = " + str(array[0].getX()) + " " + str(array[0].getY()) + " " + str(array[0].getZ()) + " CFactor: " + str(self.calibrator.converted
+                                                                                                                                                )
+                    temp = LVecBase3f(temp2[0], temp2[1], temp2[2])
+                    array[0] = temp
+                    print "Point Calibrated = " + str(temp)
+                    print "Camerinha = " + str(self.cam.getPos())
+                    if self.ball is not None:
+                        print "BOLINHA = " + str(self.ball.getPos()) + "\n\n\n"
                 quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
                 self.cam.setPosQuat(array[0], quaternion)
-                print "Dentro " + str(array) + " - Frame: " + str(array[2])
-                print "COORDENADA CAMERA: " + str(self.cam.getPos())
+                #print "Dentro " + str(array) + " - Frame: " + str(array[2])
+                #print "COORDENADA CAMERA: " + str(self.cam.getPos())
             sleep(0.033)
             #print "DENTRO " + str(globalCounter)
             #print canUpdateSlam
@@ -268,11 +269,56 @@ class ARScene(ShowBase):
                 #self.onekeyText = genLabelText("[2] - " + str(globalCounter % 30), 3, self)
             #sleep(0.033)
 
+    def verifyVirtualObject(self):
+        global isObjectCreated
+
+        if self.calibrator.ready:
+            if not isObjectCreated:
+                self.ball = self.loader.loadModel("models/ball")
+                self.ball.reparentTo(self.render)
+                self.ball.setScale(0.15, 0.15, 0.15)
+                x = self.cam.getX()
+                y = self.cam.getY()
+                z = self.cam.getZ()
+                self.ball.setPos(x, y + 2.0, z)
+
+                self.ballSphere = self.ball.find("**/ball")
+                self.ballSphere.node().setFromCollideMask(BitMask32.bit(1))
+                self.ballSphere.node().setIntoCollideMask(BitMask32.allOff())
+                self.ballSphere.show()
+
+                self.cTrav.addCollider(self.ballSphere, self.pusher)
+
+                self.pusher.addCollider(self.ballSphere, self.ball, self.drive.node())
+                self.cTrav.showCollisions(self.render)
+
+                isObjectCreated = True
+
+
+    def startCalibration(self):
+        x = self.cam.getX()
+        y = self.cam.getY()
+        z = self.cam.getZ()
+
+        self.calibrator.setStart(x, y, z)
+
+    def endCalibration(self):
+        x = self.cam.getX()
+        y = self.cam.getY()
+        z = self.cam.getZ()
+
+        self.calibrator.setEnd(x, y, z)
 
     def defineKeys(self):
         self.accept('escape', sys.exit)
         self.accept('1', self.detachObjetct)
+        self.accept('2', self.startCalibration)
+        self.accept('3', self.endCalibration)
+        self.accept('4', self.verifyVirtualObject)
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)
         self.onekeyText = genLabelText("[1] - Object detach", 2, self)
+        self.onekeyText = genLabelText("[2] - Start calibration", 3, self)
+        self.onekeyText = genLabelText("[3] - End calibration", 4, self)
+        self.onekeyText = genLabelText("[4] - Ola bolinha", 5, self)
