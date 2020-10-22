@@ -17,7 +17,7 @@
 
 int main() {
     //cv::namedWindow("Share Cam", cv::WINDOW_AUTOSIZE);
-    cv::VideoCapture cap(REAL_WEBCAM);
+    cv::VideoCapture cap(1);
     cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('M', 'J', 'P', 'G'));
     cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
@@ -79,7 +79,7 @@ int main() {
 
     // creates the virtual camera handlers
     VirtualCameraHandler virtualCam1(cap, VIRTUAL_WEBCAM_1);
-    VirtualCameraHandler virtualCam2(cap, VIRTUAL_WEBCAM_2);
+    //VirtualCameraHandler virtualCam2(cap, VIRTUAL_WEBCAM_2);
 
     cv::Mat frame;
 
@@ -98,7 +98,7 @@ int main() {
 
         // replicate the camera frame to the virtual cameras
         virtualCam1.feedCam();
-        virtualCam2.feedCam();
+        //virtualCam2.feedCam();
 
         sem_post(sem_slam_prod); // signal to slam that there is a frame in memory
         sem_post(sem_yolo_prod); // signal to yolo that there is a frame in memory
