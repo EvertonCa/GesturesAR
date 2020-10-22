@@ -1,4 +1,5 @@
 import sys
+from Queue import Queue
 from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Filename, Point2, TextNode, CollisionTraverser, \
     CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, BitMask32, LVecBase3f, LQuaternion, \
@@ -7,13 +8,14 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
 from time import sleep
+import threading
 
 loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
 loadPrcFileData("", "show-frame-rate-meter 1") #show fps
 loadPrcFileData("", "sync-video 0") #turn off v-sync
 loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind the calculted positions. this is a try to reduce the lag.
 
-canUpdateSlam = False
+canUpdateSlam = True
 canUpdateHands = False
 
 positionArray = []
@@ -24,6 +26,7 @@ ganPositionArray = []
 globalGanCounter = 0
 actualGanJoint = 0
 
+queueSlam = Queue()
 
 def genLabelText(text, i, self):
     return OnscreenText(text=text, parent=self.a2dTopLeft, scale=.04,
@@ -35,8 +38,10 @@ def updateSlam(text):
     global positionArray
     global canUpdateSlam
     global globalCounter
+    global queueSlam
 
     if len(text) > 0:
+        #if canUpdateSlam:
         splitedString = text.split()
         globalCounter = int(splitedString[0])
         x = float(splitedString[1]) * 10
@@ -46,20 +51,21 @@ def updateSlam(text):
         qy = float(splitedString[5])
         qz = float(splitedString[6])
         qw = float(splitedString[7])
-
         vector3f = LVecBase3f(x, z, -y)
         quaternion = LQuaternion(qw, qx, qz, -qy)
-        cameraPos = [vector3f, quaternion]
+        cameraPos = [vector3f, quaternion, int(splitedString[0])]
         positionArray = cameraPos
-        canUpdateSlam = True
-        print "FORA " + str(globalCounter)
+        queueSlam.put(cameraPos)
+        print "Fora " + str(cameraPos) + " - Frame: " + splitedString[0]
+        #canUpdateSlam = True
+        #print "FORA " + str(globalCounter) + str(canUpdateSlam)
 
 
 def updateHands(text):
     global ganPositionArray
     global canUpdateHands
 
-    if not canUpdateHands:
+    if canUpdateHands:
         ganPositionArray = []
 
         splitText = text.split('][')
@@ -82,11 +88,12 @@ def updateHands(text):
                 vector3f = LVecBase3f(x, y, z)
                 ganPositionArray.append(vector3f)
 
-        canUpdateHands = True
+        #canUpdateHands = True
 
 
 class ARScene(ShowBase):
     def __init__(self):
+        global canSendSlam
         ShowBase.__init__(self)
 
         PStatClient.connect()
@@ -148,10 +155,12 @@ class ARScene(ShowBase):
 
         # updating the models positions each frame.
         sleep(1)  # some webcams are quite slow to start up so we add some safety
-        self.taskMgr.add(self.updatePatterns, "update-patterns")
-        self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position")
-        self.setGanNodes()
-        self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
+        #self.taskMgr.add(self.updatePatterns, "update-patterns")
+        #self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position", sort= 0, priority=0)
+        slam_thread = threading.Thread(target=self.refreshCameraPosition2)
+        slam_thread.start()
+        #self.setGanNodes()
+        #self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
         self.cTrav.showCollisions(self.render)
 
     def addObject(self):
@@ -191,7 +200,7 @@ class ARScene(ShowBase):
                 self.ganNodes["Node" + str(i)].show()
                 #print (self.ganNodes["Node" + str(i)].getPos())
 
-            canUpdateHands = False
+            #canUpdateHands = False
             #print ('\n\n\n')
         return Task.cont
 
@@ -210,17 +219,54 @@ class ARScene(ShowBase):
         global canUpdateSlam
         global positionArray
         global globalCounter
+        global queueSlam
 
-        print "DENTRO " + str(globalCounter)
+        #print "DENTRO " + str(globalCounter) + str(canUpdateSlam)
 
-        if(canUpdateSlam):
-            quaternion = LQuaternion(positionArray[1][0], positionArray[1][1],
-                                     positionArray[1][2], positionArray[1][3])
-            self.cam.setPosQuat(positionArray[0], quaternion)
-            canUpdateSlam = False
-            self.onekeyText = genLabelText("[2] - " + str(globalCounter % 30), 3, self)
+        #if(canUpdateSlam):
+        #print "DENTRO IF " + str(globalCounter)
+        #quaternion = LQuaternion(positionArray[1][0], positionArray[1][1],
+        #                         positionArray[1][2], positionArray[1][3])
+        if not queueSlam.empty():
+            array = queueSlam.get()
+            quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
+            self.cam.setPosQuat(array[0], quaternion)
+            print "Dentro " + str(array) + " - Frame: " + str(array[2])
+            print "COORDENADA CAMERA: " + str(self.cam.getPos())
 
+        #self.cam.setPosQuat(positionArray[0], quaternion)
+        #canUpdateSlam = False
+        #self.onekeyText = genLabelText("[2] - " + str(globalCounter % 30), 3, self)
+
+        #sleep(0.033)  # Wait until next iteration
         return Task.cont
+
+    def refreshCameraPosition2(self):
+        global canUpdateSlam
+        global positionArray
+        global globalCounter
+        global queueSlam
+
+        while True:
+            if not queueSlam.empty():
+                array = queueSlam.get()
+                quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
+                self.cam.setPosQuat(array[0], quaternion)
+                print "Dentro " + str(array) + " - Frame: " + str(array[2])
+                print "COORDENADA CAMERA: " + str(self.cam.getPos())
+            sleep(0.033)
+            #print "DENTRO " + str(globalCounter)
+            #print canUpdateSlam
+
+            #if(canUpdateSlam):
+            #    print "DENTRO IF " + str(globalCounter)
+            #    quaternion = LQuaternion(positionArray[1][0], positionArray[1][1],
+            #                             positionArray[1][2], positionArray[1][3])
+            #    self.cam.setPosQuat(positionArray[0], quaternion)
+            #    canUpdateSlam = False
+
+                #self.onekeyText = genLabelText("[2] - " + str(globalCounter % 30), 3, self)
+            #sleep(0.033)
 
 
     def defineKeys(self):

@@ -4,6 +4,7 @@ import threading
 
 
 def get_messages(module):
+
     if module == "YOLO":
         p = Popen(['../cmake-build-debug/GetMessageYolo'], shell=True, stdout=PIPE, stdin=PIPE)
     elif module == "SLAM":
@@ -26,6 +27,8 @@ if __name__ == "__main__":
     yolo_thread = threading.Thread(target=get_messages, args=("YOLO",))
     slam_thread = threading.Thread(target=get_messages, args=("SLAM",))
     hands_thread = threading.Thread(target=get_messages, args=("HANDS",))
+
+    #sleep(1)
 
     # starting yolo thread
     yolo_thread.start()
