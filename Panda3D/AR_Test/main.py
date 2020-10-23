@@ -3,7 +3,7 @@ from direct.actor.Actor import Actor
 from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Filename, Point2, TextNode, CollisionTraverser, \
     CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, CollisionCapsule, BitMask32, LVecBase3f, LQuaternion, \
-    CollisionSphere, NodePath
+    CollisionSphere, NodePath, PStatClient
 from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
@@ -56,6 +56,8 @@ class ARtest(ShowBase):
         gltf.patch_loader(self.loader)
         self.disable_mouse()
 
+        PStatClient.connect()
+
         self.cTrav = CollisionTraverser()
 
         self.cHandler = CollisionHandlerQueue()
@@ -68,7 +70,7 @@ class ARtest(ShowBase):
 
         self.readFile()
 
-        self.fillArray()
+        #self.fillArray()
 
         self.fillGanArray()
 
@@ -249,9 +251,6 @@ class ARtest(ShowBase):
             self.ganNodes["Node19"].show()
             self.ganNodes["Node20"].show()
 
-            print(self.ganNodes["Node0"].getPos())
-            print(self.ganNodes["Node8"].getPos())
-
             globalGanCounter += 1
 
         sleep(0.033)#Wait until next iteration
@@ -302,9 +301,9 @@ class ARtest(ShowBase):
             if(i % 5 == 2):
                 continue
             splitedString = self.ganTxtLines[i].split()
-            x = (float(splitedString[0]) / 200) * -1
+            x = (float(splitedString[0]) / 400) * -1
             y = float(splitedString[2]) / 50
-            z = float(splitedString[1]) / 200
+            z = float(splitedString[1]) / 400
             vector3f = LVecBase3f(x, y, z)
             if (contador == 0):
                 ganPositionArray0.append(vector3f)

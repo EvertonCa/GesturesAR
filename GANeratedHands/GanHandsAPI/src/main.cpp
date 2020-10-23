@@ -128,7 +128,14 @@ bool run(sem_t *sem_prod_cam, sem_t *sem_cons_cam, sem_t *sem_prod_message, sem_
 
         std::stringstream coordinatesString;
 
-        coordinatesString << *frame_cont << " " << coordinates3d << std::endl;
+        for (int i = 0; i < 26; ++i)
+        {
+            if (i % 5 != 2){
+                coordinatesString << coordinates3d[i];
+            }
+        }
+
+        coordinatesString << std::endl;
 
         //std::cout << coordinatesString.str().c_str() << std::endl;
 

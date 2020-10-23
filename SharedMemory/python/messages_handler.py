@@ -1,15 +1,10 @@
 from subprocess import Popen, PIPE
-from threading import Thread, Lock
-from FeaturesDetection import get_best_marker
-import cv2
-import time
-import numpy as np
-
-lock = Lock()
-frame = None
+from ARScene import *
+import threading
 
 
 def get_messages(module):
+
     if module == "YOLO":
         p = Popen(['../cmake-build-debug/GetMessageYolo'], shell=True, stdout=PIPE, stdin=PIPE)
     elif module == "SLAM":
@@ -21,33 +16,19 @@ def get_messages(module):
         #p.stdin.write(value.encode('utf_8'))
         #p.stdin.flush()
         result = p.stdout.readline().strip().decode()
-        #print(result)
-
-
-def get_virtual_webcam():
-    global frame
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
-    width = 1280
-    height = 720
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    while True:
-        with lock:
-            ret, frame = cap.read()
-
-            # Display the resulting frame
-            cv2.imshow('frame',frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        if module == "SLAM":
+            updateSlam(result)
+        elif module == "HANDS":
+            updateHands(result)
 
 
 if __name__ == "__main__":
-
     # creating thread
-    yolo_thread = Thread(target=get_messages, args=("YOLO",))
-    slam_thread = Thread(target=get_messages, args=("SLAM",))
-    hands_thread = Thread(target=get_messages, args=("HANDS",))
+    yolo_thread = threading.Thread(target=get_messages, args=("YOLO",))
+    slam_thread = threading.Thread(target=get_messages, args=("SLAM",))
+    hands_thread = threading.Thread(target=get_messages, args=("HANDS",))
+
+    #sleep(1)
 
     # starting yolo thread
     yolo_thread.start()
@@ -56,11 +37,13 @@ if __name__ == "__main__":
     # starting hands thread
     hands_thread.start()
 
-    cam_thread = Thread(target=get_virtual_webcam)
-    cam_thread.start()
+    # run panda3d instance
+    pandaScene = ARScene()
+    pandaScene.run()
 
-    time.sleep(4)
-    with lock:
-        print("-----" + str(frame.shape))
-        cv2.imwrite('teste.png', frame)
-        get_best_marker(frame, [1, 4])
+    # wait until yolo thread is completely executed
+    #yolo_thread.join()
+    # wait until slam thread is completely executed
+    #slam_thread.join()
+    # wait until hands thread is completely executed
+    #hands_thread.join()

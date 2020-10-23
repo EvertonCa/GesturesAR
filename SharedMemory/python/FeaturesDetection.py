@@ -17,8 +17,9 @@ from subprocess import Popen, PIPE
 
 #size_image = (640, 480)
 size_image = (960, 720)
+#size_image = (1200, 900)
 #size_image = (1920, 1080)
-MIN_MATCH_COUNT = 10
+MIN_MATCH_COUNT = 8
 
 rating_dictionary = {
     0: "DS4",
@@ -50,16 +51,17 @@ def start_thread_sift():
     t.start()
 
 
-def start_marker():
+def start_marker(yolo_output):
     global webcam_working
-    cv2.imwrite("frame.jpg", newer_frame)
+    #cv2.imwrite("frame.jpg", newer_frame)
     img1 = newer_frame.copy()
-    webcam_working = False
-    cv2.destroyAllWindows()
-    #p = Popen(['../cmake-build-debug/GetMessageYolo'], shell=True, stdout=PIPE, stdin=PIPE)
-    #yolo_output = p.stdout.readline().strip().decode()
-    yolo_output = [1, 2, 3, 4]
-    get_best_marker(img1, yolo_output)
+    ans = get_best_marker(img1, yolo_output)
+
+    if ans is not None:
+        webcam_working = False
+        cv2.destroyAllWindows()
+        return ans
+    return None
 
 
 # save and load features in pickle file
@@ -99,8 +101,12 @@ def save_features_database(name, photo_directory='', file_type='.jpg'):
     i = 0
     for file in glob.glob(photo_directory + '*' + file_type):
         print('calculating feature points of', file)
+        namefile_list.append(file)
 
         img_angle = yolo2coordinates(img_name=file)
+        # img_angle = cv2.imread(file, 0)
+        # img_angle = cv2.resize(img_angle, size_image)
+
 
         # Initiate SIFT detector
         sift = cv2.SIFT_create()
@@ -117,13 +123,13 @@ def save_features_database(name, photo_directory='', file_type='.jpg'):
         i += 1
 
     # Dump the keypoints and list name
-    with open(photo_directory+name + "_kp"+str(size_image), 'wb') as file_output:
+    with open(photo_directory+name + "_kp" + str(size_image), 'wb') as file_output:
         pickle.dump(index, file_output, -1)
 
-    with open(photo_directory+name + "_des"+str(size_image), 'wb') as file_output:
+    with open(photo_directory+name + "_des" + str(size_image), 'wb') as file_output:
         pickle.dump(des, file_output, -1)
 
-    with open(photo_directory + name + "_list"+str(size_image), 'wb') as file_output:
+    with open(photo_directory + name + "_list" + str(size_image), 'wb') as file_output:
         pickle.dump(namefile_list, file_output, -1)
 
 
@@ -135,6 +141,14 @@ def save_all_database():
                                file_type='.jpg')
     print("--- SAVE %s seconds ---" % (time.time() - start_time))
 
+if not os.path.exists(os.path.join('..', '..', 'SIFT_database', 'Carrinho', 'sift_database_list' + str(size_image))):
+    start_time = time.time()
+    save_all_database()
+    print("--- SAVE %s seconds ---" % (time.time() - start_time))
+
+start_time = time.time()
+kp, des, namefile_list = load_features_database('sift_database', os.path.join('..', '..', 'SIFT_database', ''))
+print("--- LOAD %s seconds ---" % (time.time() - start_time))
 
 # convert yolo parameters to coordinates in pixels
 def yolo2coordinates(img=None, yoloparameters_txt=None, img_name=None):
@@ -142,8 +156,13 @@ def yolo2coordinates(img=None, yoloparameters_txt=None, img_name=None):
         return None
 
     if yoloparameters_txt is None:
-        txtfile = img_name.replace(os.path.join(photo_directory[:-1], ''),
-                                          os.path.join(photo_directory[:-1], 'bb', '')).replace(file_type, '.txt')
+        last_bar_index = img_name.rfind('/')
+        if last_bar_index == -1:
+            last_bar_index = img_name.rfind('\\')
+        txtfile = os.path.join(img_name[:last_bar_index], 'bb', img_name[last_bar_index+1:])
+        last_point_index = img_name.rfind('.')
+        txtfile = txtfile.replace(img_name[last_point_index:], '.txt')
+
         f = open(txtfile, "r")
         yoloparameters_txt = f.readline()
 
@@ -184,7 +203,7 @@ def yolo2coordinates(img=None, yoloparameters_txt=None, img_name=None):
     return answer
 
 
-def angle_check(des, des2, namefile_list, MIN_MATCH_COUNT=10):
+def angle_check(des, des2, namefile_list, MIN_MATCH_COUNT=8):
     matching_score = []
     for i in range(len(namefile_list)):
         # BFMatcher with default params
@@ -196,32 +215,30 @@ def angle_check(des, des2, namefile_list, MIN_MATCH_COUNT=10):
             if m.distance < 0.7 * n.distance:
                 good.append(m)
 
-        # print(namefile_list[i], 'tem', len(good))
+        print(namefile_list[i], 'tem', len(good))
         matching_score.append(len(good))
 
     index_best = np.argmax(matching_score)
-    # print(namefile_list[index_best], 'with', matching_score[index_best], 'matches')
+    print(namefile_list[index_best], 'with', matching_score[index_best], 'matches')
     if matching_score[index_best] >= MIN_MATCH_COUNT:
         return namefile_list[index_best], np.amax(matching_score)
     return None
 
 
-def angle_check_multicore(i, des, des2, namefile_list, MIN_MATCH_COUNT=10):
+def angle_check_multicore(i, des, des2, namefile_list, MIN_MATCH_COUNT=8):
     threshold0 = int(round(i * (len(namefile_list) + 1) / (cpu_count())))
     threshold1 = int(round((i + 1) * (len(namefile_list) + 1) / (cpu_count())))
     return angle_check(des[threshold0:threshold1], des2, namefile_list[threshold0:threshold1], MIN_MATCH_COUNT)
 
 
 def get_best_marker(img, yolo):
-    label = yolo[0]
+    label = int(yolo[0])
 
     start_all_time = time.time()
     start_time = time.time()
-    img_croped = img.copy()
-    #img_croped = yolo2coordinates(img, yolo)
+    # img_croped = img.copy()
+    img_croped = yolo2coordinates(img, yolo)
 
-    kp, des, namefile_list = load_features_database('sift_database', os.path.join('..', '..', 'SIFT_database', ''))
-    print("--- LOAD %s seconds ---" % (time.time() - start_time))
     start_time = time.time()
 
     # Initiate SIFT detector
@@ -260,11 +277,13 @@ def get_best_marker(img, yolo):
     if best is not None:
         print("best angle in the file", best)
         imgbest = yolo2coordinates(img_name=best)
+        # imgbest = cv2.imread(best, 0)
+        # imgbest = cv2.resize(imgbest, size_image)
 
         img3 = generate_matches_image(imgbest, img)
         if img3 is None:
             return None
-        cv2.imwrite('marcador.jpg', img3)
+        cv2.imwrite('Maker.jpg', img3)
 
         print("--- marker %s seconds ---" % (time.time() - start_time))
         print("--- ALL %s seconds ---" % (time.time() - start_all_time))
@@ -275,7 +294,7 @@ def get_best_marker(img, yolo):
         print("--- ALL %s seconds ---" % (time.time() - start_all_time))
 
 
-def generate_matches_image(img1, img2, MIN_MATCH_COUNT = 10):
+def generate_matches_image(img1, img2, MIN_MATCH_COUNT=8):
     # img1: queryImage
     # img2: trainImage
 
@@ -356,28 +375,19 @@ def draw_bb(img1, img2):
 
 
 if __name__ == '__main__':
-    classe = 1
-    porcentagem = 0.99
-    x_esquerda = 0.
-    y_superior = 854
-    largura = 2276
-    altura = 1439
 
-    yolo = [classe, porcentagem, 0.23857474, 0.28224504, 0.56436956, 0.47574949]
-    name_img1 = os.path.join('..', '..', 'cortada.png')
+    start_thread_sift()
+    marker_angle = None
 
-    img1 = cv2.imread(name_img1, 0)  # imagem da webcam
-    #img1 = cv2.resize(img1, size_image)
+    while marker_angle is None:
+        output_yolo = input()
 
-    #save_all_database()
+        yolo_values = output_yolo.replace('\t', '').replace('Object Detected: ', '').replace('(center_x:',                                                                                                        '').replace(
+            '  center_y: ', '').replace('  width: ', '').replace('  height: ', '').replace(')', '').replace('\n',                                                                                                            '').replace(
+            '%', '')
 
-    photo_directory = os.path.join('SIFT_database', rating_dictionary[classe], '')
-    file_type = '.jpg'
-    best_angle_name = get_best_marker(img1, yolo)
-
-    if best_angle_name is not None:
-        img_angle = yolo2coordinates(img_name=best_angle_name)
-        #img1 = cv2.resize(img1, size_image)
-        draw_bb(img_angle, img1)
-
-
+        marker_angle = start_marker(yolo_values)
+        if marker_angle is not None:
+            print('Maker.jpg')
+        else:
+            print(None)
