@@ -8,7 +8,7 @@ echo "Starting Camera Sharing..."
 
 echo "Cleaning up..."
 
-cd SharedMemory/cmake-build-debug/
+cd src/cmake-build-debug/
 
 chmod +x Cleanup
 
@@ -17,16 +17,17 @@ chmod +x Cleanup
 cd ../../
 
 # starts the camera sharing in a new terminal
-gnome-terminal -- bash -c 'cd SharedMemory/cmake-build-debug/ && echo "Sharing Camera Feed..." && chmod +x ShareCam && ./ShareCam; sleep 1'
+gnome-terminal -- bash -c 'cd src/cmake-build-debug/ && echo "Sharing Camera Feed..." && chmod +x ShareCam && ./ShareCam; sleep 1'
 
 echo "Sharing Camera Feed..."
 
 sleep 1
 
-# starts the listener for the messages sent by GANHands in a new terminal
-gnome-terminal -- bash -c 'source SharedMemory/python/venv2/bin/activate && cd SharedMemory/python/ && echo "Listening for Messages..." && python2.7 messages_handler.py; sleep 100'
+# starts Panda3D and the listeners for the messages from all modules
+gnome-terminal -- bash -c 'source src/python/venv2/bin/activate && cd src/python/ && echo "Starting Panda3D..." && python2.7 Panda3D.py; sleep 100'
 
 echo "Listening for Messages..."
+echo "Panda3D started..."
 
 # starts ORB-SLAM2 in a new terminal
 gnome-terminal -- bash -c 'cd ORB-SLAM/ORB_SLAM2/ && echo "Starting ORB-SLAM2..." && ./Examples/Monocular/mono_tum Vocabulary/ORBvoc.txt Examples/Monocular/TUM1.yaml; sleep 1'
