@@ -57,6 +57,13 @@ class FeaturesDetection:
             3: "PS2",
             4: "Carrinho"
         }
+        self.label_yolo = {
+            'Dualshock4': 0,
+            'IamGroot': 1,
+            'MiniCraque': 2,
+            'PlayStation2': 3,
+            'Carrinho': 4
+        }
 
         self.lock = Lock()
         self.newer_frame = None
@@ -71,22 +78,17 @@ class FeaturesDetection:
         # start_time = time.time()
         self.kp, self.des, self.namefile_list = self.load_features_database('sift_database', os.path.join('..', '..', 'SIFT_database', ''))
         # print("--- LOAD %s seconds ---" % (time.time() - start_time))
-        
-        self.start_thread_webcam()
 
     def get_virtual_webcam(self):
         cap = cv2.VideoCapture(3)
-        while True:
-            ret, self.newer_frame = cap.read()
-
-            if cv2.waitKey(1) and not self.webcam_working:
-                break
+        ret, self.newer_frame = cap.read()
 
     def start_thread_webcam(self):
         t = Thread(target=self.get_virtual_webcam)
         t.start()
 
     def start_marker(self, yolo_output):
+        self.get_virtual_webcam()
         cv2.imwrite("frame.jpg", self.newer_frame)
         img1 = self.newer_frame.copy()
 
@@ -231,10 +233,9 @@ class FeaturesDetection:
             '%', '').replace(':', '')
 
         label_name = yolo.split(' ')[0]
-        inverse_dict_label = dict(map(reversed, self.rating_dictionary.items()))
-        yolo = yolo.replace(label_name, str(inverse_dict_label.get(label_name)))
+        yolo = yolo.replace(label_name, str(self.label_yolo.get(label_name)))
 
-        print yolo
+
 
         label = int(yolo[0])
 
@@ -288,7 +289,6 @@ class FeaturesDetection:
             img3 = self.generate_matches_image(imgbest, img)
             if img3 is None:
                 return None
-            cv2.imwrite('Maker.jpg', img3)
 
             # print("--- marker %s seconds ---" % (time.time() - start_time))
             # print("--- ALL %s seconds ---" % (time.time() - start_all_time))
@@ -332,14 +332,14 @@ class FeaturesDetection:
             # draw perspective matching in image
             pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
             dst = cv2.perspectiveTransform(pts, M)
-            # img_draw = cv2.polylines(img2, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
+            img_draw = cv2.polylines(img2, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
 
             draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
                                singlePointColor=None,
                                matchesMask=matchesMask,  # draw only inliers
                                flags=2)
-            img3 = cv2.drawMatches(img1, kp1, img2, kp2, good, None, **draw_params)
-            plt.imshow(cv2.cvtColor(img3, cv2.COLOR_BGR2RGB)), plt.show()
+            img3 = cv2.drawMatches(img1, kp1, img_draw, kp2, good, None, **draw_params)
+            cv2.imwrite('SIFT matching points.png', img3)
 
             return img_ans
 
