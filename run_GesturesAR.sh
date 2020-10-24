@@ -24,7 +24,7 @@ echo "Sharing Camera Feed..."
 sleep 1
 
 # starts Panda3D and the listeners for the messages from all modules
-gnome-terminal -- bash -c 'source src/python/venv2/bin/activate && cd src/python/ && echo "Starting Panda3D..." && python2.7 Panda3D.py; sleep 100'
+gnome-terminal -- bash -c 'source src/python/venv/bin/activate && cd src/python/ && echo "Starting Panda3D..." && python2.7 Panda3D.py; sleep 100'
 
 echo "Listening for Messages..."
 echo "Panda3D started..."
