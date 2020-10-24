@@ -17,7 +17,7 @@
 
 int main() {
     //cv::namedWindow("Share Cam", cv::WINDOW_AUTOSIZE);
-    cv::VideoCapture cap(1);
+    cv::VideoCapture cap(91);
     cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('M', 'J', 'P', 'G'));
     cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);

@@ -10,11 +10,7 @@
 
 int main() {
     cv::namedWindow("Test Cam", cv::WINDOW_AUTOSIZE);
-    cv::VideoCapture cap(3);
-    cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('M', 'J', 'P', 'G'));
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
-    cap.set(CV_CAP_PROP_AUTOFOCUS, 0);
+    cv::VideoCapture cap(91);
 
     if (!cap.isOpened())
         return -1;
@@ -25,6 +21,8 @@ int main() {
     while (true) {
 
         cap >> frame;
+
+        std::cout << frame.size << std::endl;
 
         cv::imshow("Test Cam", frame);
 
