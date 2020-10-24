@@ -77,23 +77,35 @@ int main() {
         return -1;
     }
 
+    char *block_hands = attach_memory_block(FILENAME_CAM_HANDS, CAMERA_BLOCK_SIZE);
+    if (block_hands == NULL) {
+        printf("ERROR: coundn't get block\n");
+        return -1;
+    }
+
     // creates the virtual camera handlers
     VirtualCameraHandler virtualCam1(cap, VIRTUAL_WEBCAM_1);
     //VirtualCameraHandler virtualCam2(cap, VIRTUAL_WEBCAM_2);
 
     cv::Mat frame;
+    cv::Mat frameHands;
 
     //std::cout << cap << std::endl;
 
     while (true) {
 
         cap >> frame;
+        cap >> frameHands;
 
         sem_wait(sem_slam_cons); // wait for the slam consumer to have an open slot
         sem_wait(sem_yolo_cons); // wait for the yolo consumer to have an open slot
+        sem_wait(sem_hands_cons); // wait for the hands consumer to have an open slot
 
         // copy the frame to shared memory
         memcpy(block, frame.ptr(), CAMERA_BLOCK_SIZE);
+
+        // copy the frame to hands shared memory
+        memcpy(block_hands, frameHands.ptr(), CAMERA_BLOCK_SIZE);
 
         // replicate the camera frame to the virtual cameras
         virtualCam1.feedCam();
@@ -101,8 +113,6 @@ int main() {
 
         sem_post(sem_slam_prod); // signal to slam that there is a frame in memory
         sem_post(sem_yolo_prod); // signal to yolo that there is a frame in memory
-
-        sem_wait(sem_hands_cons); // wait for the hands consumer to have an open slot
         sem_post(sem_hands_prod); // signal to hands that there is a frame in memory
 
         //cv::imshow("Share Cam", frame);

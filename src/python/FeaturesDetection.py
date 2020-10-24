@@ -75,28 +75,29 @@ class FeaturesDetection:
         self.start_thread_webcam()
 
     def get_virtual_webcam(self):
-        cap = cv2.VideoCapture(0)
-        while self.webcam_working:
+        cap = cv2.VideoCapture(3)
+        while True:
             ret, self.newer_frame = cap.read()
 
-            # Display the resulting frame
-            cv2.imshow('SIFT visualizer', self.newer_frame)
-            if cv2.waitKey(1) and 0xFF == ord('q'):
+            if cv2.waitKey(1) and not self.webcam_working:
                 break
 
     def start_thread_webcam(self):
-        t = Thread(target=self.get_virtual_webcam, daemon=True)
+        t = Thread(target=self.get_virtual_webcam)
         t.start()
 
     def start_marker(self, yolo_output):
-        #cv2.imwrite("frame.jpg", self.newer_frame)
+        cv2.imwrite("frame.jpg", self.newer_frame)
         img1 = self.newer_frame.copy()
+
+        print "OUTPUT YOLO " + yolo_output
+
         ans = self.get_best_marker(img1, yolo_output)
 
         if ans is not None:
             self.webcam_working = False
             cv2.destroyAllWindows()
-            return ans
+            return 'Maker.jpg'
         return None
 
     # save and load features in pickle file
@@ -224,6 +225,17 @@ class FeaturesDetection:
         return img[int(ymin):int(ymax), int(xmin):int(xmax)]
 
     def get_best_marker(self, img, yolo):
+        yolo = yolo.replace('\t', '').replace('Object Detected: ', '').replace('(center_x:', '').replace(
+            '  center_y: ', '').replace('  width: ', '').replace('  height: ', '').replace(')', '').replace('\n',
+                                                                                                            '').replace(
+            '%', '').replace(':', '')
+
+        label_name = yolo.split(' ')[0]
+        inverse_dict_label = dict(map(reversed, self.rating_dictionary.items()))
+        yolo = yolo.replace(label_name, str(inverse_dict_label.get(label_name)))
+
+        print yolo
+
         label = int(yolo[0])
 
         start_all_time = time.time()

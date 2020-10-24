@@ -23,7 +23,7 @@
 
 #define FILENAME_MESSAGE_HANDS "/tmp/blockhands"
 #define MESSAGE_BLOCK_SIZE 4096
-#define FILENAME_CAM "/tmp/blockcam"
+#define FILENAME_CAM "/tmp/blockcamhands"
 #define IPC_RESULT_ERROR (-1)
 #define HANDS_SEM_CAM_PRODUCER_FNAME "/handscamproducer"
 #define HANDS_SEM_CAM_CONSUMER_FNAME "/handscamconsumer"
@@ -113,7 +113,11 @@ bool run(sem_t *sem_prod_cam, sem_t *sem_cons_cam, sem_t *sem_prod_message, sem_
 
         frame = cv::Mat(CAMERA_HEIGHT, CAMERA_WIDTH, 16, block_cam, CAMERA_CHANNELS * CAMERA_WIDTH); // creates a frame from memory
 
-        kara.processImg(frame);
+        cv::Mat temp;
+
+        temp = frame;
+
+        kara.processImg(temp);
 
         sem_post(sem_cons_cam); // signal that data was acquired
 

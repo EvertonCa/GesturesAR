@@ -10,7 +10,7 @@
 
 int main() {
     cv::namedWindow("Test Cam", cv::WINDOW_AUTOSIZE);
-    cv::VideoCapture cap(0);
+    cv::VideoCapture cap(3);
     cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('M', 'J', 'P', 'G'));
     cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, 720);

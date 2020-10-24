@@ -9,6 +9,7 @@ from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
 from time import sleep
 from DistanceCalibrator import DistanceCalibrator
+from FeaturesDetection import FeaturesDetection
 
 loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
 loadPrcFileData("", "show-frame-rate-meter 1") #show fps
@@ -17,6 +18,7 @@ loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind t
 
 canUpdateSlam = False
 canUpdateHands = False
+canUpdateYOLO = True
 isObjectCreated = False
 
 positionArray = []
@@ -27,13 +29,25 @@ ganPositionArray = []
 globalGanCounter = 0
 actualGanJoint = 0
 
+yoloBB = ""
+
 queueSlam = Queue()
 queueHands = Queue()
+
 
 def genLabelText(text, i, self):
     return OnscreenText(text=text, parent=self.a2dTopLeft, scale=.04,
                         pos=(0.06, -.08 * i), fg=(1, 1, 1, 1),
                         shadow=(0, 0, 0, .5), align=TextNode.ALeft)
+
+
+def updateYOLO(text):
+    global canUpdateYOLO
+    global yoloBB
+
+    if len(text) > 0:
+        if canUpdateYOLO:
+            yoloBB = text
 
 
 def updateSlam(text):
@@ -58,7 +72,7 @@ def updateSlam(text):
         cameraPos = [vector3f, quaternion, int(splitedString[0])]
         positionArray = cameraPos
         queueSlam.put(positionArray)
-        print "Fora " + str(positionArray) + " - Frame: " + splitedString[0]
+        #print "Fora " + str(positionArray) + " - Frame: " + splitedString[0]
         #canUpdateSlam = True
         #print "FORA " + str(globalCounter) + str(canUpdateSlam)
 
@@ -66,6 +80,7 @@ def updateSlam(text):
 def updateHands(text):
     global ganPositionArray
     global canUpdateHands
+    global queueHands
 
     if canUpdateHands:
         ganPositionArray = []
@@ -86,6 +101,7 @@ def updateHands(text):
                 z = (b / 600)
                 vector3f = LVecBase3f(x, y, z)
                 ganPositionArray.append(vector3f)
+                queueHands.put(vector3f)
 
         #canUpdateHands = True
 
@@ -95,6 +111,9 @@ class ARScene(ShowBase):
         ShowBase.__init__(self)
 
         # PStatClient.connect()
+
+        # image angle detector
+        self.detector = FeaturesDetection()
 
         self.ball = None
 
@@ -178,7 +197,7 @@ class ARScene(ShowBase):
 
     def updatePatterns(self, task):
         self.ar.analyze(self.tex, True)
-        return Task.cont
+        return task.cont
 
     def setGanNodesPosition2(self, task):
         global ganPositionArray
@@ -193,7 +212,7 @@ class ARScene(ShowBase):
 
             #canUpdateHands = False
             #print ('\n\n\n')
-        return Task.cont
+        return task.cont
 
     def initHands(self):
         print "chamei o initHands"
@@ -271,9 +290,9 @@ class ARScene(ShowBase):
                 if not self.cleanQueue:
                     while not queueSlam.empty():
                         array = queueSlam.get()
-                        print "SACOU"
+                        #print "SACOU"
                     self.cleanQueue = True
-                print "Queue top = " + str(array)
+                #print "Queue top = " + str(array)
                 temp2 = self.calibrator.convertSlamToWorld(array[0].getX(), array[0].getY(), array[0].getZ())
                 # print "Point SLAM = " + str(array[0].getX()) + " " + str(array[0].getY()) + " " + str(
                 #     array[0].getZ()) + " CFactor: " + str(self.calibrator.converted
@@ -344,6 +363,19 @@ class ARScene(ShowBase):
         global canUpdateSlam
         canUpdateSlam = True
 
+    def detect_object(self):
+        global canUpdateYOLO
+        global yoloBB
+
+        canUpdateYOLO = False
+        answer = self.detector.start_marker(yolo_output=yoloBB)
+        canUpdateYOLO = True
+
+        if answer is not None:
+            # TODO get marker and attach object to it
+            print answer
+            pass
+
     def defineKeys(self):
         self.accept('escape', sys.exit)
         self.accept('1', self.detachObjetct)
@@ -351,6 +383,7 @@ class ARScene(ShowBase):
         self.accept('3', self.endCalibration)
         self.accept('4', self.verifyVirtualObject)
         self.accept('5', self.initHands)
+        self.accept('6', self.detect_object)
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)
@@ -359,3 +392,4 @@ class ARScene(ShowBase):
         self.onekeyText = genLabelText("[3] - End calibration", 4, self)
         self.onekeyText = genLabelText("[4] - Spawn ball in front of camera", 5, self)
         self.onekeyText = genLabelText("[5] - Activate GanHands", 6, self)
+        self.onekeyText = genLabelText("[6] - Detect Object", 7, self)
