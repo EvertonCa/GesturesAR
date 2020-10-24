@@ -88,6 +88,12 @@ int main() {
         return -1;
     }
 
+    char *block_cam_hands = attach_memory_block(FILENAME_CAM_HANDS, CAMERA_BLOCK_SIZE);
+    if (block_cam_hands == NULL) {
+        printf("ERROR: coundn't get block\n");
+        return -1;
+    }
+
     // cleanup
     sem_close(sem_prod_yolo);
     sem_close(sem_cons_yolo);
@@ -98,6 +104,7 @@ int main() {
     detach_memory_block(block_yolo);
     detach_memory_block(block_slam);
     detach_memory_block(block_hands);
+    detach_memory_block(block_cam_hands);
 
     if (destroy_memory_block(FILENAME_CAM)) {
         printf("Destroyed block: %s\n", FILENAME_CAM);
@@ -121,6 +128,12 @@ int main() {
         printf("Destroyed block: %s\n", FILENAME_MESSAGE_HANDS);
     } else {
         printf("Could not destroy block: %s\n", FILENAME_MESSAGE_HANDS);
+    }
+
+    if (destroy_memory_block(FILENAME_CAM_HANDS)) {
+        printf("Destroyed block: %s\n", FILENAME_CAM_HANDS);
+    } else {
+        printf("Could not destroy block: %s\n", FILENAME_CAM_HANDS);
     }
 
     return 0;

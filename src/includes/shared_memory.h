@@ -17,6 +17,7 @@ bool destroy_memory_block(char *filename);
 //all of the programs will shared these values
 #define MESSAGE_BLOCK_SIZE 4096
 #define FILENAME_CAM "/tmp/blockcam"
+#define FILENAME_CAM_HANDS "/tmp/blockcamhands"
 #define FILENAME_MESSAGE_SLAM "/tmp/blockslam"
 #define FILENAME_MESSAGE_YOLO "/tmp/blockyolo"
 #define FILENAME_MESSAGE_HANDS "/tmp/blockhands"

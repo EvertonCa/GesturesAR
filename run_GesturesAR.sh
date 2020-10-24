@@ -2,7 +2,13 @@ echo "~~~~~~~~~~~~~~~ Starting TCC - Hand Gestures ~~~~~~~~~~~~~~~"
 
 echo "Starting v4l2loopback..."
 
-echo 0112358 | sudo -S modprobe v4l2loopback video_nr=3,4 card_label="Virtual Camera 1","Virtual Camera 2"
+echo 0112358 | sudo -S modprobe -r v4l2loopback
+
+echo 0112358 | sudo -S modprobe v4l2loopback devices=3 video_nr=3,91,92 exclusive_caps=0,0,1
+
+gnome-terminal -- bash -c 'gst-launch-1.0 souphttpsrc location=http://192.168.0.129:8081/video user-id=admin user-pw=admin ! jpegdec ! videoconvert ! v4l2sink device=/dev/video91; sleep 100'
+
+sleep 3
 
 echo "Starting Camera Sharing..."
 
@@ -24,7 +30,7 @@ echo "Sharing Camera Feed..."
 sleep 1
 
 # starts Panda3D and the listeners for the messages from all modules
-gnome-terminal -- bash -c 'source src/python/venv2/bin/activate && cd src/python/ && echo "Starting Panda3D..." && python2.7 Panda3D.py; sleep 100'
+gnome-terminal -- bash -c 'source src/python/venv/bin/activate && cd src/python/ && echo "Starting Panda3D..." && python2.7 Panda3D.py; sleep 100'
 
 echo "Listening for Messages..."
 echo "Panda3D started..."

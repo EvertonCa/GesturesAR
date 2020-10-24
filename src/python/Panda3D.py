@@ -20,6 +20,8 @@ def get_messages(module):
             updateSlam(result)
         elif module == "HANDS":
             updateHands(result)
+        elif module == "YOLO":
+            updateYOLO(result)
 
 
 if __name__ == "__main__":
