@@ -57,9 +57,9 @@ int main() {
     while (true) {
         sem_wait(sem_correction);
         if (strlen(result_correction) > 0) {
-            int number = atoi(result_correction);
+            float number = atof(result_correction);
             correctionFactor = result_correction;
-            printf("\"%d\"\n", number);
+            printf("\"%f\"\n", number);
         } else {
             printf("\"%s\"\n", correctionFactor);
         }
