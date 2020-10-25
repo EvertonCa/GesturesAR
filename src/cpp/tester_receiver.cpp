@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <iostream>
+#include <stdlib.h>
 #include <unistd.h>
 
 #define IPC_RESULT_ERROR (-1)
@@ -57,8 +57,9 @@ int main() {
     while (true) {
         sem_wait(sem_correction);
         if (strlen(result_correction) > 0) {
+            int number = atoi(result_correction);
             correctionFactor = result_correction;
-            printf("\"%s\"\n", correctionFactor);
+            printf("\"%d\"\n", number);
         } else {
             printf("\"%s\"\n", correctionFactor);
         }
