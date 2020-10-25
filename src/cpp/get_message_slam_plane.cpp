@@ -3,22 +3,25 @@
 //
 
 #include <algorithm>
-#include <chrono>
 #include <semaphore.h>
+#include <fcntl.h>
 
 #include "../includes/shared_memory.h"
 
 int main() {
+    
+    sem_unlink(SLAM_SEM_PLANE_CONS_FNAME);
+    sem_unlink(SLAM_SEM_PLANE_PROD_FNAME);
 
-    sem_t *sem_slam_plane_cons = sem_open(SLAM_SEM_PLANE_CONS_FNAME, 0);
-    if (sem_slam_plane_cons == SEM_FAILED) {
-        perror("sem_open/planecons");
+    sem_t *sem_slam_plane_prod = sem_open(SLAM_SEM_PLANE_PROD_FNAME, O_CREAT, 0660, 1);
+    if (sem_slam_plane_prod == SEM_FAILED) {
+        perror("sem_open/planeprod");
         exit(EXIT_FAILURE);
     }
 
-    sem_t *sem_slam_plane_prod = sem_open(SLAM_SEM_PLANE_PROD_FNAME, 1);
+    sem_t *sem_slam_plane_cons = sem_open(SLAM_SEM_PLANE_CONS_FNAME, O_CREAT, 0660, 0);
     if (sem_slam_plane_cons == SEM_FAILED) {
-        perror("sem_open/planeprod");
+        perror("sem_open/planecons");
         exit(EXIT_FAILURE);
     }
 

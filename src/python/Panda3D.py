@@ -25,7 +25,7 @@ def get_messages(module):
         elif module == "YOLO":
             updateYOLO(result)
         elif module == "SLAM-PLANE":
-            print result
+            pass
 
 
 if __name__ == "__main__":
