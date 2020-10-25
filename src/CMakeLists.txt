@@ -26,11 +26,14 @@ add_executable(GetMessageYolo cpp/get_message_yolo.cpp includes/shared_memory.h 
 add_executable(GetMessageSlam cpp/get_message_slam.cpp includes/shared_memory.h cpp/shared_memory.cpp)
 add_executable(GetMessageHands cpp/get_message_hands.cpp includes/shared_memory.h cpp/shared_memory.cpp)
 
+add_executable(TesterReceiver cpp/tester_receiver.cpp )
+add_executable(TesterSender cpp/tester_sender.cpp )
+
 add_executable(VirtualCamera cpp/virtual_camera.cpp)
 
-add_executable(Tester cpp/tester.cpp)
+add_executable(OpenCVCalibrator cpp/opencv_calibrator.cpp)
 
 
 target_link_libraries(ShareCam ${OpenCV_LIBS})
 target_link_libraries(VirtualCamera ${OpenCV_LIBS})
-target_link_libraries(Tester ${OpenCV_LIBS})
+target_link_libraries(OpenCVCalibrator ${OpenCV_LIBS})
