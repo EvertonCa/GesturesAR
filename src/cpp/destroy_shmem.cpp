@@ -20,6 +20,8 @@ int main() {
     sem_unlink(HANDS_SEM_MESSAGE_PRODUCER_FNAME);
     sem_unlink(HANDS_SEM_MESSAGE_CONSUMER_FNAME);
     sem_unlink(SLAM_SEM_CORRECTION_FNAME);
+    sem_unlink(SLAM_SEM_PLANE_CONS_FNAME);
+    sem_unlink(SLAM_SEM_PLANE_PROD_FNAME);
 
     // setup the YOLO semaphores
     sem_t *sem_prod_yolo = sem_open(YOLO_SEM_MESSAGE_PRODUCER_FNAME, O_CREAT, 0660, 0);
@@ -67,6 +69,18 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+    // setup the slam plane semaphores
+    sem_t *sem_plane_cons = sem_open(SLAM_SEM_PLANE_CONS_FNAME, O_CREAT, 0660, 1);
+    if (sem_plane_cons == SEM_FAILED) {
+        perror("sem_open/planecons");
+        exit(EXIT_FAILURE);
+    }
+
+    sem_t *sem_plane_prod = sem_open(SLAM_SEM_PLANE_PROD_FNAME, O_CREAT, 0660, 1);
+    if (sem_plane_prod == SEM_FAILED) {
+        perror("sem_open/planeprod");
+        exit(EXIT_FAILURE);
+    }
 
     // grab the YOLO shared memory block
     char *block_yolo = attach_memory_block(FILENAME_MESSAGE_YOLO, MESSAGE_BLOCK_SIZE);
@@ -96,6 +110,7 @@ int main() {
         return -1;
     }
 
+    // grab the hands camera feed shared memory block
     char *block_cam_hands = attach_memory_block(FILENAME_CAM_HANDS, CAMERA_BLOCK_SIZE);
     if (block_cam_hands == NULL) {
         printf("ERROR: coundn't get hands camera block\n");
@@ -105,7 +120,14 @@ int main() {
     // grab the correction shared memory block
     char *block_correction = attach_memory_block(FILENAME_CORRECTION_SLAM, MESSAGE_BLOCK_SIZE);
     if (block_correction == NULL) {
-        printf("ERROR: coundn't get hands camera block\n");
+        printf("ERROR: coundn't get slam correction block\n");
+        return -1;
+    }
+
+    // grab the slam plane shared memory block
+    char *block_plane = attach_memory_block(FILENAME_SLAM_PLANE, MESSAGE_BLOCK_SIZE);
+    if (block_plane == NULL) {
+        printf("ERROR: coundn't get slam plane block\n");
         return -1;
     }
 
@@ -117,11 +139,15 @@ int main() {
     sem_close(sem_prod_hands);
     sem_close(sem_cons_hands);
     sem_close(sem_correction);
+    sem_close(sem_plane_cons);
+    sem_close(sem_plane_prod);
+
     detach_memory_block(block_yolo);
     detach_memory_block(block_slam);
     detach_memory_block(block_hands);
     detach_memory_block(block_correction);
     detach_memory_block(block_cam_hands);
+    detach_memory_block(block_plane);
 
     if (destroy_memory_block(FILENAME_CAM)) {
         printf("Destroyed block: %s\n", FILENAME_CAM);
@@ -157,6 +183,12 @@ int main() {
         printf("Destroyed block: %s\n", FILENAME_CORRECTION_SLAM);
     } else {
         printf("Could not destroy block: %s\n", FILENAME_CORRECTION_SLAM);
+    }
+
+    if (destroy_memory_block(FILENAME_SLAM_PLANE)) {
+        printf("Destroyed block: %s\n", FILENAME_SLAM_PLANE);
+    } else {
+        printf("Could not destroy block: %s\n", FILENAME_SLAM_PLANE);
     }
 
     return 0;

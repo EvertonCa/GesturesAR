@@ -27,7 +27,9 @@ add_executable(GetMessageSlam cpp/get_message_slam.cpp includes/shared_memory.h 
 add_executable(GetMessageHands cpp/get_message_hands.cpp includes/shared_memory.h cpp/shared_memory.cpp)
 
 add_executable(TesterReceiver cpp/tester_receiver.cpp )
-add_executable(YoloCorrectionSender cpp/yolo_correction_sender.cpp)
+add_executable(SLAMCorrectionSender cpp/SLAM_correction_sender.cpp)
+add_executable(SLAMPlaneSender cpp/slam_plane_sender_prototype.cpp)
+add_executable(SLAMPlaneReceiver cpp/slam_plane_receiver_prototype.cpp)
 
 add_executable(VirtualCamera cpp/virtual_camera.cpp)
 

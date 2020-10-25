@@ -22,6 +22,7 @@ bool destroy_memory_block(char *filename);
 #define FILENAME_MESSAGE_YOLO "/tmp/blockyolo"
 #define FILENAME_MESSAGE_HANDS "/tmp/blockhands"
 #define FILENAME_CORRECTION_SLAM "/tmp/blockslamcorrection"
+#define FILENAME_SLAM_PLANE "/tmp/blockslamplane"
 #define IPC_RESULT_ERROR (-1)
 
 //filenames for camera semaphores
@@ -46,5 +47,9 @@ bool destroy_memory_block(char *filename);
 
 // filenames for correction semaphores
 #define SLAM_SEM_CORRECTION_FNAME "/correction"
+
+// filename for slam planes
+#define SLAM_SEM_PLANE_CONS_FNAME "/slamplanecons"
+#define SLAM_SEM_PLANE_PROD_FNAME "/slamplaneprod"
 
 #endif //SHAREDMEMORYC___SHARED_MEMORY_H
