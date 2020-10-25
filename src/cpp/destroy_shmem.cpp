@@ -92,14 +92,20 @@ int main() {
     // grab the shared memory block
     char *block = attach_memory_block(FILENAME_CAM, CAMERA_BLOCK_SIZE);
     if (block == NULL) {
-        printf("ERROR: coundn't get block\n");
+        printf("ERROR: coundn't get camera block\n");
+        return -1;
+    }
+
+    char *block_cam_hands = attach_memory_block(FILENAME_CAM_HANDS, CAMERA_BLOCK_SIZE);
+    if (block_cam_hands == NULL) {
+        printf("ERROR: coundn't get hands camera block\n");
         return -1;
     }
 
     // grab the correction shared memory block
     char *block_correction = attach_memory_block(FILENAME_CORRECTION_SLAM, MESSAGE_BLOCK_SIZE);
     if (block_correction == NULL) {
-        printf("ERROR: coundn't get block\n");
+        printf("ERROR: coundn't get hands camera block\n");
         return -1;
     }
 
@@ -115,6 +121,7 @@ int main() {
     detach_memory_block(block_slam);
     detach_memory_block(block_hands);
     detach_memory_block(block_correction);
+    detach_memory_block(block_cam_hands);
 
     if (destroy_memory_block(FILENAME_CAM)) {
         printf("Destroyed block: %s\n", FILENAME_CAM);
@@ -138,6 +145,12 @@ int main() {
         printf("Destroyed block: %s\n", FILENAME_MESSAGE_HANDS);
     } else {
         printf("Could not destroy block: %s\n", FILENAME_MESSAGE_HANDS);
+    }
+
+    if (destroy_memory_block(FILENAME_CAM_HANDS)) {
+        printf("Destroyed block: %s\n", FILENAME_CAM_HANDS);
+    } else {
+        printf("Could not destroy block: %s\n", FILENAME_CAM_HANDS);
     }
 
     if (destroy_memory_block(FILENAME_CORRECTION_SLAM)) {
