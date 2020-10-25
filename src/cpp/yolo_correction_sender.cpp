@@ -9,6 +9,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <iostream>
+#include <string.h>
 
 #define IPC_RESULT_ERROR (-1)
 #define MESSAGE_BLOCK_SIZE 4096
@@ -50,12 +51,14 @@ int main(int argc, char *argv[]) {
 
     if (shared_correction_block_id == IPC_RESULT_ERROR) {
         result_correction = NULL;
+        exit(1);
     }
 
     //map the shared block int this process's memory and give me a pointer to it
     result_correction = (char*) shmat(shared_correction_block_id, NULL, 0);
     if (result_correction == (char *)IPC_RESULT_ERROR) {
         result_correction = NULL;
+        exit(1);
     }
 
     sem_wait(sem_correction); // wait for the producer to have an open slot

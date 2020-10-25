@@ -10,6 +10,7 @@ from direct.task import Task
 from time import sleep
 from DistanceCalibrator import DistanceCalibrator
 from FeaturesDetection import FeaturesDetection
+from HorizontalPlaneCorrection import send_factor_to_slam
 
 loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
 loadPrcFileData("", "show-frame-rate-meter 1") #show fps
@@ -362,6 +363,9 @@ class ARScene(ShowBase):
         self.calibrator.setEnd(x, y, z)
         global canUpdateSlam
         canUpdateSlam = True
+
+        # sends the right dimensions to slam
+        send_factor_to_slam(self.calibrator.converted)
 
     def detect_object(self):
         global canUpdateYOLO

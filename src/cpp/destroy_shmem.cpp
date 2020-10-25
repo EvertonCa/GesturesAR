@@ -61,7 +61,7 @@ int main() {
     }
 
     // setup the CORRECTION semaphores
-    sem_t *sem_correction = sem_open(SLAM_SEM_CORRECTION_FNAME, O_CREAT, 0660, 0);
+    sem_t *sem_correction = sem_open(SLAM_SEM_CORRECTION_FNAME, O_CREAT, 0660, 1);
     if (sem_correction == SEM_FAILED) {
         perror("sem_open/correction");
         exit(EXIT_FAILURE);

@@ -3,12 +3,12 @@
 //
 
 #include <algorithm>
-#include <chrono>
 #include <semaphore.h>
 #include <fcntl.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #define IPC_RESULT_ERROR (-1)
@@ -52,21 +52,18 @@ int main() {
         result_correction = NULL;
     }
 
-    char *correctionFactor = "None";
-
     while (true) {
         sem_wait(sem_correction);
         if (strlen(result_correction) > 0) {
             float number = atof(result_correction);
-            correctionFactor = result_correction;
             printf("\"%f\"\n", number);
         } else {
-            printf("\"%s\"\n", correctionFactor);
+            printf("\"None\"\n");
         }
 
-        sleep(1);
-
         sem_post(sem_correction);
+
+        sleep(1);
     }
 
     sem_close(sem_correction);
