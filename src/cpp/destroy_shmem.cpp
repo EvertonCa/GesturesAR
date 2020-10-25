@@ -84,13 +84,13 @@ int main() {
     // grab the shared memory block
     char *block = attach_memory_block(FILENAME_CAM, CAMERA_BLOCK_SIZE);
     if (block == NULL) {
-        printf("ERROR: coundn't get block\n");
+        printf("ERROR: coundn't get camera block\n");
         return -1;
     }
 
     char *block_cam_hands = attach_memory_block(FILENAME_CAM_HANDS, CAMERA_BLOCK_SIZE);
     if (block_cam_hands == NULL) {
-        printf("ERROR: coundn't get block\n");
+        printf("ERROR: coundn't get hands camera block\n");
         return -1;
     }
 
