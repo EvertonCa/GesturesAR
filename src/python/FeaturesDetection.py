@@ -44,8 +44,8 @@ def angle_check_multicore(i, des, des2, namefile_list):
 class FeaturesDetection:
     def __init__(self):
         #self.size_image = (640, 480)
-        self.size_image = (960, 720)
-        #self.size_image = (1200, 900)
+        #self.size_image = (960, 720)
+        self.size_image = (1440, 1080)
         #self.size_image = (1920, 1080)
 
         self.MIN_MATCH_COUNT = 8
