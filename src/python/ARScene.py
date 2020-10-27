@@ -7,10 +7,11 @@ from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Filename, Poi
 from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
 from direct.task import Task
-from time import sleep
+from time import sleep, time
 from DistanceCalibrator import DistanceCalibrator
-from FeaturesDetection import FeaturesDetection
 from HorizontalPlaneCorrection import send_factor_to_slam
+from ObjectDetection import object_detection
+from threading import Thread
 
 loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
 loadPrcFileData("", "show-frame-rate-meter 1") #show fps
@@ -22,6 +23,10 @@ canUpdatePlane = True
 canUpdateHands = False
 canUpdateSlam = False
 isObjectCreated = False
+
+calibrated = False
+
+markerCreated = False
 
 positionArray = []
 globalCounter = 0
@@ -35,6 +40,7 @@ yoloBB = ""
 plane = ""
 
 queueSlam = Queue()
+queueSlamCalibrated = Queue()
 queueHands = Queue()
 
 
@@ -66,6 +72,9 @@ def updateSlam(text):
     global positionArray
     global globalCounter
     global queueSlam
+    global queueSlamCalibrated
+    global calibrated
+    global initialClock
 
     if len(text) > 0:
         splitedString = text.split()
@@ -81,7 +90,11 @@ def updateSlam(text):
         quaternion = LQuaternion(qw, qx, qz, -qy)
         cameraPos = [vector3f, quaternion, int(splitedString[0])]
         positionArray = cameraPos
-        queueSlam.put(positionArray)
+        if calibrated:
+            queueSlamCalibrated.put(positionArray)
+        else:
+            queueSlam.put(positionArray)
+        #print "SLAM - " + str(time() - initialClock) + str(positionArray)
         #print "Fora " + str(positionArray) + " - Frame: " + splitedString[0]
         #print "FORA " + str(globalCounter) + str(canUpdateSlam)
 
@@ -103,9 +116,9 @@ def updateHands(text):
                 a = float(xt)
                 b = float(yt)
                 c = float(zt)
-                x = (a / (-900))
+                x = -(a / 700)
                 y = (c / 100)
-                z = (b / 300)
+                z = (b / 400)
                 vector3f = LVecBase3f(x, y, z)
                 ganPositionArray.append(vector3f)
                 queueHands.put(vector3f)
@@ -116,9 +129,6 @@ class ARScene(ShowBase):
         ShowBase.__init__(self)
 
         # PStatClient.connect()
-
-        # image angle detector
-        self.detector = FeaturesDetection()
 
         self.ball = None
 
@@ -234,19 +244,23 @@ class ARScene(ShowBase):
         global positionArray
         global globalCounter
         global queueSlam
+        global calibrated
+        global queueSlamCalibrated
 
-        if not queueSlam.empty():
-            array = queueSlam.get()
-            if self.calibrator.ready:
-                if not self.cleanQueue:
-                    while not queueSlam.empty():
-                        array = queueSlam.get()
-                    self.cleanQueue = True
+        if calibrated:
+            if not queueSlamCalibrated.empty():
+                array = queueSlamCalibrated.get()
+                print str(array)
                 temp2 = self.calibrator.convertSlamToWorld(array[0].getX(), array[0].getY(), array[0].getZ())
                 temp = LVecBase3f(temp2[0], temp2[1], temp2[2])
                 array[0] = temp
-            quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
-            self.cam.setPosQuat(array[0], quaternion)
+                quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
+                self.cam.setPosQuat(array[0], quaternion)
+        else:
+            if not queueSlam.empty():
+                array = queueSlam.get()
+                quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
+                self.cam.setPosQuat(array[0], quaternion)
         return task.cont
 
     def verifyVirtualObject(self):
@@ -284,6 +298,8 @@ class ARScene(ShowBase):
         print "Calibration started"
 
     def endCalibration(self):
+        global calibrated
+
         x = self.cam.getX()
         y = self.cam.getY()
         z = self.cam.getZ()
@@ -292,20 +308,21 @@ class ARScene(ShowBase):
 
         # sends the right dimensions to slam
         send_factor_to_slam(self.calibrator.converted)
+        calibrated = True
         print "Calibration Finished"
 
     def detect_object(self):
         global canUpdateYOLO
         global yoloBB
+        global markerCreated
 
         canUpdateYOLO = False
-        answer = self.detector.start_marker(yolo_output=yoloBB)
+        marker_thread = Thread(target=object_detection, args=(yoloBB, ))
+        marker_thread.start()
+        marker_thread.join()
         canUpdateYOLO = True
 
-        if answer is not None:
-            # TODO get marker and attach object to it
-            print answer
-            pass
+        markerCreated = True
 
     def defineKeys(self):
         self.accept('escape', sys.exit)
