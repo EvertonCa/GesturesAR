@@ -3,7 +3,7 @@ import numpy as np
 
 
 def get_virtual_webcam():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(3)
     ret, newer_frame = cap.read()
     return newer_frame.copy()
 
@@ -34,6 +34,7 @@ def yolo2coordinates(yolo_parameters, image_shape):
 
 
 def object_detection(yolo_output, marker_name='Maker.png'):
+    print yolo_output
     yolo_output = yolo_output.replace('\t', '').replace('Object Detected: ', '').replace('(center_x:', '').replace(
         '  center_y: ', '').replace('  width: ', '').replace('  height: ', '').replace(')', '').replace('\n',
                                                                                                         '').replace(

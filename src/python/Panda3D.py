@@ -1,18 +1,19 @@
 from subprocess import Popen, PIPE
 from ARScene import *
 import threading
+from time import time, sleep
 
 
 def get_messages(module):
 
     if module == "YOLO":
-        p = Popen(['../cmake-build-debug/GetMessageYolo'], shell=True, stdout=PIPE, stdin=PIPE)
+        p = Popen(['stdbuf', '-o0', '../cmake-build-debug/GetMessageYolo'], stdout=PIPE)
     elif module == "SLAM":
-        p = Popen(['../cmake-build-debug/GetMessageSlam'], shell=True, stdout=PIPE, stdin=PIPE)
+        p = Popen(['stdbuf', '-o0', '../cmake-build-debug/GetMessageSlam'], stdout=PIPE)
     elif module == "HANDS":
-        p = Popen(['../cmake-build-debug/GetMessageHands'], shell=True, stdout=PIPE, stdin=PIPE)
+        p = Popen(['stdbuf', '-o0', '../cmake-build-debug/GetMessageHands'], stdout=PIPE)
     elif module == "SLAM-PLANE":
-        p = Popen(['../cmake-build-debug/GetMessageSlamPlane'], shell=True, stdout=PIPE, stdin=PIPE)
+        p = Popen(['stdbuf', '-o0', '../cmake-build-debug/GetMessageSlamPlane'], stdout=PIPE)
     while True:
         result = p.stdout.readline().strip().decode()
         if module == "SLAM":
