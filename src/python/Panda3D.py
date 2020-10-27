@@ -14,9 +14,6 @@ def get_messages(module):
     elif module == "SLAM-PLANE":
         p = Popen(['../cmake-build-debug/GetMessageSlamPlane'], shell=True, stdout=PIPE, stdin=PIPE)
     while True:
-        #value = bytes(value, 'UTF-8')  # Needed in Python 3.
-        #p.stdin.write(value.encode('utf_8'))
-        #p.stdin.flush()
         result = p.stdout.readline().strip().decode()
         if module == "SLAM":
             updateSlam(result)
@@ -25,7 +22,7 @@ def get_messages(module):
         elif module == "YOLO":
             updateYOLO(result)
         elif module == "SLAM-PLANE":
-            pass
+            updatePlane(result)
 
 
 if __name__ == "__main__":
@@ -34,8 +31,6 @@ if __name__ == "__main__":
     slam_thread = threading.Thread(target=get_messages, args=("SLAM",))
     hands_thread = threading.Thread(target=get_messages, args=("HANDS",))
     slam_plane_thread = threading.Thread(target=get_messages, args=("SLAM-PLANE",))
-
-    #sleep(1)
 
     # starting yolo thread
     yolo_thread.start()

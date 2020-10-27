@@ -17,9 +17,10 @@ loadPrcFileData("", "show-frame-rate-meter 1") #show fps
 loadPrcFileData("", "sync-video 0") #turn off v-sync
 loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind the calculted positions. this is a try to reduce the lag.
 
-canUpdateSlam = False
-canUpdateHands = False
 canUpdateYOLO = True
+canUpdatePlane = True
+canUpdateHands = False
+canUpdateSlam = False
 isObjectCreated = False
 
 positionArray = []
@@ -31,6 +32,7 @@ globalGanCounter = 0
 actualGanJoint = 0
 
 yoloBB = ""
+plane = ""
 
 queueSlam = Queue()
 queueHands = Queue()
@@ -51,14 +53,21 @@ def updateYOLO(text):
             yoloBB = text
 
 
+def updatePlane(text):
+    global canUpdatePlane
+    global plane
+
+    if len(text) > 0:
+        if canUpdatePlane:
+            plane = text
+
+
 def updateSlam(text):
     global positionArray
-    global canUpdateSlam
     global globalCounter
     global queueSlam
 
     if len(text) > 0:
-        # if canUpdateSlam:
         splitedString = text.split()
         globalCounter = int(splitedString[0])
         x = float(splitedString[1]) * 10
@@ -74,37 +83,32 @@ def updateSlam(text):
         positionArray = cameraPos
         queueSlam.put(positionArray)
         #print "Fora " + str(positionArray) + " - Frame: " + splitedString[0]
-        #canUpdateSlam = True
         #print "FORA " + str(globalCounter) + str(canUpdateSlam)
 
 
 def updateHands(text):
     global ganPositionArray
-    global canUpdateHands
     global queueHands
+    global canUpdateHands
 
     if canUpdateHands:
         ganPositionArray = []
-
         splitText = text.split('][')
 
         for i, line in enumerate(splitText):
-            temp = line.replace('"', '').replace('[', '').replace(',', '').replace(';', '').replace(']', '').replace(
-                '\n',
-                '')
+            temp = line.replace('"', '').replace('[', '').replace(',', '').replace(';', '').\
+                replace(']', '').replace('\n', '')
             if len(temp) > 2:
-                x, y, z = temp.split(" ")
-                a = float(x)
-                b = float(y)
-                c = float(z)
-                x = (a / (-600))
-                y = (c / 50)
-                z = (b / 600)
+                xt, yt, zt = temp.split(" ")
+                a = float(xt)
+                b = float(yt)
+                c = float(zt)
+                x = (a / (-900))
+                y = (c / 100)
+                z = (b / 300)
                 vector3f = LVecBase3f(x, y, z)
                 ganPositionArray.append(vector3f)
                 queueHands.put(vector3f)
-
-        #canUpdateHands = True
 
 
 class ARScene(ShowBase):
@@ -164,18 +168,12 @@ class ARScene(ShowBase):
         self.axis = self.loader.loadModel("models/ball")
         self.ballSphere = self.axis.find("**/ball")
         self.ganNodes = {}
+        self.setGanNodes()
 
-        # load a model to visualize the tracking
-        #self.addObject()
+        self.startSlam()
 
-        # updating the models positions each frame.
-        sleep(1)  # some webcams are quite slow to start up so we add some safety
-        #self.taskMgr.add(self.updatePatterns, "update-patterns")
-        self.taskMgr.add(self.refreshCameraPosition2, "refresh-camera-position", sort=0, priority=0)
-        #slam_thread = threading.Thread(target=self.refreshCameraPosition2)
-        #slam_thread.start()
-        #self.setGanNodes()
-        #self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
+    def startSlam(self):
+        self.taskMgr.add(self.refreshCameraPosition, "refresh-camera-position", sort=0, priority=0)
 
     def addObject(self):
         self.axis.reparentTo(self.render)
@@ -200,37 +198,18 @@ class ARScene(ShowBase):
         self.ar.analyze(self.tex, True)
         return task.cont
 
-    def setGanNodesPosition2(self, task):
-        global ganPositionArray
+    def initHands(self):
         global canUpdateHands
 
-        if(canUpdateHands):
-            for i in range(len(ganPositionArray)):
-                #print (str(i) + " --> " + str(ganPositionArray[i]))
-                self.ganNodes["Node" + str(i)].setPos(ganPositionArray[i])
-                self.ganNodes["Node" + str(i)].show()
-                #print (self.ganNodes["Node" + str(i)].getPos())
-
-            #canUpdateHands = False
-            #print ('\n\n\n')
-        return task.cont
-
-    def initHands(self):
-        print "chamei o initHands"
-        #hands_thread = threading.Thread(target=self.setGanNodesPosition)
-        #hands_thread.start()
+        canUpdateHands = True
         self.taskMgr.add(self.setGanNodesPosition, "set-gan-nodes-position")
 
     def setGanNodesPosition(self, task):
         global queueHands
 
-        #while True:
         if not queueHands.empty():
-            print "DENTRO da queue"
             if self.calibrator.ready:
-                print "DENTRO do calib ready"
                 for i in range(21):
-                    print "DENTRO do for"
                     ganVector3f = queueHands.get()
                     x = ganVector3f.getX() + self.cam.getX()
                     y = ganVector3f.getY() + self.cam.getY()
@@ -238,9 +217,9 @@ class ARScene(ShowBase):
                     calibratedVector3f = LVecBase3f(x, y, z)
                     self.ganNodes["Node" + str(i)].setPos(calibratedVector3f)
                     self.ganNodes["Node" + str(i)].show()
-                    print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
+                    if i == 8:
+                        print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
                 print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
-        sleep(0.03)
         return task.cont
 
     def setGanNodes(self):
@@ -251,77 +230,24 @@ class ARScene(ShowBase):
             self.ganNodes["Node{0}".format(i)] = nodePath.attachNewNode(cNode)
             self.ganNodes["Node{0}".format(i)].reparentTo(self.render)
 
-
     def refreshCameraPosition(self, task):
-        global canUpdateSlam
         global positionArray
         global globalCounter
         global queueSlam
 
-        #print "DENTRO " + str(globalCounter) + str(canUpdateSlam)
-
-        #if(canUpdateSlam):
-        #print "DENTRO IF " + str(globalCounter)
-        #quaternion = LQuaternion(positionArray[1][0], positionArray[1][1],
-        #                         positionArray[1][2], positionArray[1][3])
-        if not queueSlam.empty():
-            array = queueSlam.get()
-            quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
-            self.cam.setPosQuat(array[0], quaternion)
-            #print "Dentro " + str(array) + " - Frame: " + str(array[2])
-            print "COORDENADA CAMERA: " + str(self.cam.getPos())
-
-        #self.cam.setPosQuat(positionArray[0], quaternion)
-        #canUpdateSlam = False
-        #self.onekeyText = genLabelText("[2] - " + str(globalCounter % 30), 3, self)
-
-        #sleep(0.033)  # Wait until next iteration
-        return Task.cont
-
-    def refreshCameraPosition2(self, task):
-        global canUpdateSlam
-        global positionArray
-        global globalCounter
-        global queueSlam
-
-        #while True:
         if not queueSlam.empty():
             array = queueSlam.get()
             if self.calibrator.ready:
                 if not self.cleanQueue:
                     while not queueSlam.empty():
                         array = queueSlam.get()
-                        #print "SACOU"
                     self.cleanQueue = True
-                #print "Queue top = " + str(array)
                 temp2 = self.calibrator.convertSlamToWorld(array[0].getX(), array[0].getY(), array[0].getZ())
-                # print "Point SLAM = " + str(array[0].getX()) + " " + str(array[0].getY()) + " " + str(
-                #     array[0].getZ()) + " CFactor: " + str(self.calibrator.converted
-                #                                           )
                 temp = LVecBase3f(temp2[0], temp2[1], temp2[2])
                 array[0] = temp
-                # print "Point Calibrated = " + str(temp)
-                # print "Camerinha = " + str(self.cam.getPos())
-                # if self.ball is not None:
-                #     print "BOLINHA = " + str(self.ball.getPos()) + "\n\n\n"
             quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
             self.cam.setPosQuat(array[0], quaternion)
-            #print "Dentro " + str(array) + " - Frame: " + str(array[2])
-            #print "COORDENADA CAMERA: " + str(self.cam.getPos())
-        #sleep(0.033)
         return task.cont
-            #print "DENTRO " + str(globalCounter)
-            #print canUpdateSlam
-
-            #if(canUpdateSlam):
-            #    print "DENTRO IF " + str(globalCounter)
-            #    quaternion = LQuaternion(positionArray[1][0], positionArray[1][1],
-            #                             positionArray[1][2], positionArray[1][3])
-            #    self.cam.setPosQuat(positionArray[0], quaternion)
-            #    canUpdateSlam = False
-
-                #self.onekeyText = genLabelText("[2] - " + str(globalCounter % 30), 3, self)
-            #sleep(0.033)
 
     def verifyVirtualObject(self):
         global isObjectCreated
@@ -347,6 +273,7 @@ class ARScene(ShowBase):
                 self.cTrav.showCollisions(self.render)
 
                 isObjectCreated = True
+                print "Object added at x = " + str(self.ball.getX()) + " y = " + str(self.ball.getY()) + " z = " + str(self.ball.getX())
 
     def startCalibration(self):
         x = self.cam.getX()
@@ -354,6 +281,7 @@ class ARScene(ShowBase):
         z = self.cam.getZ()
 
         self.calibrator.setStart(x, y, z)
+        print "Calibration started"
 
     def endCalibration(self):
         x = self.cam.getX()
@@ -361,11 +289,10 @@ class ARScene(ShowBase):
         z = self.cam.getZ()
 
         self.calibrator.setEnd(x, y, z)
-        global canUpdateSlam
-        canUpdateSlam = True
 
         # sends the right dimensions to slam
         send_factor_to_slam(self.calibrator.converted)
+        print "Calibration Finished"
 
     def detect_object(self):
         global canUpdateYOLO
@@ -382,7 +309,7 @@ class ARScene(ShowBase):
 
     def defineKeys(self):
         self.accept('escape', sys.exit)
-        self.accept('1', self.detachObjetct)
+        self.accept('1', self.startSlam)
         self.accept('2', self.startCalibration)
         self.accept('3', self.endCalibration)
         self.accept('4', self.verifyVirtualObject)
@@ -391,7 +318,7 @@ class ARScene(ShowBase):
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)
-        self.onekeyText = genLabelText("[1] - Object detach", 2, self)
+        self.onekeyText = genLabelText("[1] - Start SLAM", 2, self)
         self.onekeyText = genLabelText("[2] - Start calibration", 3, self)
         self.onekeyText = genLabelText("[3] - End calibration", 4, self)
         self.onekeyText = genLabelText("[4] - Spawn ball in front of camera", 5, self)
