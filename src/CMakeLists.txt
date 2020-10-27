@@ -25,12 +25,17 @@ add_executable(ShareCam cpp/share_cam.cpp ${VIRTUAL_CAMERA_SOURCE} ${PROJECT_SOU
 add_executable(GetMessageYolo cpp/get_message_yolo.cpp includes/shared_memory.h cpp/shared_memory.cpp)
 add_executable(GetMessageSlam cpp/get_message_slam.cpp includes/shared_memory.h cpp/shared_memory.cpp)
 add_executable(GetMessageHands cpp/get_message_hands.cpp includes/shared_memory.h cpp/shared_memory.cpp)
+add_executable(GetMessageSlamPlane cpp/get_message_slam_plane.cpp includes/shared_memory.h cpp/shared_memory.cpp)
+
+add_executable(TesterReceiver cpp/tester_receiver.cpp )
+add_executable(SLAMCorrectionSender cpp/SLAM_correction_sender.cpp)
+add_executable(SLAMPlaneSender cpp/slam_plane_sender_prototype.cpp)
 
 add_executable(VirtualCamera cpp/virtual_camera.cpp)
 
-add_executable(Tester cpp/tester.cpp)
+add_executable(OpenCVCalibrator cpp/opencv_calibrator.cpp)
 
 
 target_link_libraries(ShareCam ${OpenCV_LIBS})
 target_link_libraries(VirtualCamera ${OpenCV_LIBS})
-target_link_libraries(Tester ${OpenCV_LIBS})
+target_link_libraries(OpenCVCalibrator ${OpenCV_LIBS})
