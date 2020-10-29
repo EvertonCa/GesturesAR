@@ -3,15 +3,16 @@ from Queue import Queue
 from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Filename, Point2, TextNode, CollisionTraverser, \
     CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, BitMask32, LVecBase3f, LQuaternion, \
-    CollisionSphere, NodePath, PStatClient
+    CollisionSphere, NodePath, PStatClient, Texture, CollisionBox, LPoint3f
 from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
-from direct.task import Task
-from time import sleep, time
 from DistanceCalibrator import DistanceCalibrator
 from HorizontalPlaneCorrection import send_factor_to_slam
 from ObjectDetection import object_detection
 from threading import Thread
+from subprocess import Popen
+import os
+import numpy as np
 
 loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
 loadPrcFileData("", "show-frame-rate-meter 1") #show fps
@@ -127,7 +128,6 @@ def updateHands(text):
 class ARScene(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
-
         # PStatClient.connect()
 
         self.ball = None
@@ -172,7 +172,7 @@ class ARScene(ShowBase):
         # initialize artoolkit, self.cam is our camera ,
         # the camera_para.dat is the configuration file for your camera. this one comes with the artoolkit installation.
         # last parameter is the size of the pattern in panda-units.
-        self.ar = ARToolKit.make(self.cam, Filename(self.mainDir, "ar/camera_para.dat"), 1)
+        self.ar = ARToolKit.make(self.cam, Filename(self.mainDir, "ar/camera_para.dat"), 0)
 
         # variables for the system
         self.axis = self.loader.loadModel("models/ball")
@@ -188,17 +188,26 @@ class ARScene(ShowBase):
     def addObject(self):
         self.axis.reparentTo(self.render)
         self.axis.setScale(0.5, 0.5, 0.5)
-        self.ballSphere.node().setFromCollideMask(BitMask32.bit(1))
-        self.ballSphere.node().setIntoCollideMask(BitMask32.allOff())
-        self.ballSphere.show()
+        self.ballSphere2 = self.axis.find("**/ball")
+        self.ballSphere2.node().setFromCollideMask(BitMask32.bit(1))
+        self.ballSphere2.node().setIntoCollideMask(BitMask32.allOff())
+        self.ballSphere2.show()
 
-        self.cTrav.addCollider(self.ballSphere, self.pusher)
+        self.cTrav.addCollider(self.ballSphere2, self.pusher)
 
-        self.pusher.addCollider(self.ballSphere, self.axis, self.drive.node())
+        self.pusher.addCollider(self.ballSphere2, self.axis, self.drive.node())
 
         # attach the model to a pattern so it updates the model's position relative to the camera each time we call analyze()
-        self.ar.attachPattern(Filename(self.mainDir, "ar/patt.kanji"), self.axis)
+        self.ar.attachPattern(Filename(self.mainDir, "Marker/patt.kanji"), self.axis)
         #self.ar.attachPattern(Filename(self.mainDir, "ar/groot_720.patt"), self.axis)
+        self.taskMgr.add(self.updatePatterns, "update-patterns")
+        print "Pattern loaded"
+
+    def activeAr(self):
+        p = Popen(['python3.7', 'PandaMarker.py'])
+        while not os.path.exists('Marker/Marker.patt'):
+            print "esperando..."
+        self.addObject()
 
     def detachObjetct(self):
         self.ar.detachPatterns()
@@ -221,15 +230,15 @@ class ARScene(ShowBase):
             if self.calibrator.ready:
                 for i in range(21):
                     ganVector3f = queueHands.get()
-                    x = ganVector3f.getX() + self.cam.getX()
+                    x = ganVector3f.getX() + self.cam.getX() - 0.5
                     y = ganVector3f.getY() + self.cam.getY()
                     z = ganVector3f.getZ() + self.cam.getZ()
                     calibratedVector3f = LVecBase3f(x, y, z)
                     self.ganNodes["Node" + str(i)].setPos(calibratedVector3f)
                     self.ganNodes["Node" + str(i)].show()
-                    if i == 8:
-                        print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
-                print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
+                    #if i == 8:
+                        #print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
+                #print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
         return task.cont
 
     def setGanNodes(self):
@@ -250,7 +259,7 @@ class ARScene(ShowBase):
         if calibrated:
             if not queueSlamCalibrated.empty():
                 array = queueSlamCalibrated.get()
-                print str(array)
+                #print str(array)
                 temp2 = self.calibrator.convertSlamToWorld(array[0].getX(), array[0].getY(), array[0].getZ())
                 temp = LVecBase3f(temp2[0], temp2[1], temp2[2])
                 array[0] = temp
@@ -274,7 +283,7 @@ class ARScene(ShowBase):
                 x = self.cam.getX()
                 y = self.cam.getY()
                 z = self.cam.getZ()
-                self.ball.setPos(x, y + 2.0, z)
+                self.ball.setPos(x, y + 1.5, z)
 
                 self.ballSphere = self.ball.find("**/ball")
                 self.ballSphere.node().setFromCollideMask(BitMask32.bit(1))
@@ -321,8 +330,60 @@ class ARScene(ShowBase):
         marker_thread.start()
         marker_thread.join()
         canUpdateYOLO = True
+        if os.path.exists('Marker/Marker.png'):
+            markerCreated = True
 
-        markerCreated = True
+    def set_plane(self):
+        global plane
+        points = plane
+        if points == '':
+            return
+        points = points.split(' ')
+        points = list(map(float, points))
+        print "Pontos do plano SLAM: " + str(points)
+        points = np.reshape(points, [4, 3])
+
+        non_zero_points = list()
+
+        for i in range(4):
+            ponto = self.calibrator.convertSlamToWorld(points[i][0], points[i][1], points[i][2])
+            print 'WORLD Ponto' + str(i) + ' = ' + str(ponto)
+
+            if not (points[i][0] == points[i][1] and points[i][1] == points[i][2]):
+                non_zero_points.append(points[i])
+
+        if len(non_zero_points) > 2:
+            self.set_grid(non_zero_points)
+        else:
+            print "Insufficient points"
+
+    def set_grid(self, points):
+        points = np.transpose(points)
+        points_mean = np.mean(points, 1)
+        points_mean_world = self.calibrator.convertSlamToWorld(points_mean[0], points_mean[1], points_mean[2])
+
+        x, y, z = points_mean_world[0], points_mean_world[1], points_mean_world[2]
+        print "WORLD colocando em x: " + str(x) + " y: " + str(y) + " z: " + str(z)
+        dx, dy, dz = 0.3, 0.3, 0.1
+
+        print "Coordenadas Camera: " + str(self.cam.getPos()) + "\n"
+        ponto = [self.cam.getX() * self.calibrator.converted, self.cam.getY() * self.calibrator.converted,
+                 self.cam.getZ() * self.calibrator.converted]
+        print 'SLAM camera' + ' = ' + str(ponto)
+
+        self.surface_box = self.loader.loadModel('models/cube.obj')
+        self.surface_box.reparentTo(self.render)
+        tex = self.loader.loadTexture('models/iron05.jpg')
+        tex.setWrapU(Texture.WM_repeat)
+        self.surface_box.setTexture(tex, 2)
+        self.surface_box.setPos(x, y, z - (dz))
+        self.surface_box.setScale(dx, dy, dz)
+
+        cNode = CollisionNode("SurfaceNode")
+        cNode.addSolid(CollisionBox(LPoint3f(x, y, z - (dz)), dx, dy, dz))
+        nodePath = NodePath("NodePath")
+        self.collision_surface = nodePath.attachNewNode(cNode)
+        self.collision_surface.reparentTo(self.render)
 
     def defineKeys(self):
         self.accept('escape', sys.exit)
@@ -332,6 +393,9 @@ class ARScene(ShowBase):
         self.accept('4', self.verifyVirtualObject)
         self.accept('5', self.initHands)
         self.accept('6', self.detect_object)
+        self.accept('7', self.activeAr)
+        self.accept('8', self.detachObjetct)
+        self.accept('9', self.set_plane)
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)
@@ -341,3 +405,6 @@ class ARScene(ShowBase):
         self.onekeyText = genLabelText("[4] - Spawn ball in front of camera", 5, self)
         self.onekeyText = genLabelText("[5] - Activate GanHands", 6, self)
         self.onekeyText = genLabelText("[6] - Detect Object", 7, self)
+        self.onekeyText = genLabelText("[7] - Active AR", 8, self)
+        self.onekeyText = genLabelText("[8] - Detach object", 9, self)
+        self.onekeyText = genLabelText("[9] - Set plane", 10, self)
