@@ -3,7 +3,7 @@ from Queue import Queue
 from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Filename, Point2, TextNode, CollisionTraverser, \
     CollisionHandlerQueue, CollisionHandlerPusher, CollisionNode, BitMask32, LVecBase3f, LQuaternion, \
-    CollisionSphere, NodePath, PStatClient, Texture, CollisionBox, LPoint3f
+    CollisionSphere, NodePath, PStatClient, Texture, CollisionBox, LPoint3f, LVecBase3, CollisionPolygon
 from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo, ARToolKit
 from DistanceCalibrator import DistanceCalibrator
@@ -15,7 +15,7 @@ import os
 import numpy as np
 
 loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
-loadPrcFileData("", "show-frame-rate-meter 1") #show fps
+#loadPrcFileData("", "show-frame-rate-meter 1") #show fps
 loadPrcFileData("", "sync-video 0") #turn off v-sync
 loadPrcFileData("", "auto-flip 1") #usualy the drawn texture lags a bit behind the calculted positions. this is a try to reduce the lag.
 
@@ -80,9 +80,9 @@ def updateSlam(text):
     if len(text) > 0:
         splitedString = text.split()
         globalCounter = int(splitedString[0])
-        x = float(splitedString[1]) * 10
-        y = float(splitedString[2]) * 10
-        z = float(splitedString[3]) * 10
+        x = float(splitedString[1])
+        y = float(splitedString[2])
+        z = float(splitedString[3])
         qx = float(splitedString[4])
         qy = float(splitedString[5])
         qz = float(splitedString[6])
@@ -117,9 +117,9 @@ def updateHands(text):
                 a = float(xt)
                 b = float(yt)
                 c = float(zt)
-                x = -(a / 700)
-                y = (c / 100)
-                z = (b / 400)
+                x = -(a / 600)
+                y = (c / 50)
+                z = (b / 600)
                 vector3f = LVecBase3f(x, y, z)
                 ganPositionArray.append(vector3f)
                 queueHands.put(vector3f)
@@ -128,9 +128,11 @@ def updateHands(text):
 class ARScene(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
-        # PStatClient.connect()
 
-        self.ball = None
+        self.dice_colision = None
+        self.dice = None
+        self.surface_box = None
+        self.palm = None
 
         self.cleanQueue = False
 
@@ -225,20 +227,34 @@ class ARScene(ShowBase):
 
     def setGanNodesPosition(self, task):
         global queueHands
-
+        fist_list = list()
         if not queueHands.empty():
             if self.calibrator.ready:
                 for i in range(21):
                     ganVector3f = queueHands.get()
-                    x = ganVector3f.getX() + self.cam.getX() - 0.5
-                    y = ganVector3f.getY() + self.cam.getY()
-                    z = ganVector3f.getZ() + self.cam.getZ()
+                    x = ganVector3f.getX()
+                    y = ganVector3f.getY()
+                    z = ganVector3f.getZ()
                     calibratedVector3f = LVecBase3f(x, y, z)
                     self.ganNodes["Node" + str(i)].setPos(calibratedVector3f)
                     self.ganNodes["Node" + str(i)].show()
-                    #if i == 8:
-                        #print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
-                #print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
+                    if i == 0 or i == 2 or i == 5 or i == 17:
+                        fist_list.append(calibratedVector3f)
+
+                    if i == 8:
+                        print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
+
+                if self.palm is not None:
+                    self.palm.removeNode()
+                cNode = CollisionNode("PalmNode")
+                cNode.addSolid(CollisionPolygon(fist_list[0], fist_list[1], fist_list[2], fist_list[3]))
+
+                nodePath = NodePath("NodePathpalm")
+                self.palm = nodePath.attachNewNode(cNode)
+                self.palm.reparentTo(self.cam)
+                self.palm.show()
+
+                print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
         return task.cont
 
     def setGanNodes(self):
@@ -247,7 +263,7 @@ class ARScene(ShowBase):
             cNode.addSolid(CollisionSphere(0, 0, 0, 0.02))
             nodePath = NodePath("NodePath{0}".format(i))
             self.ganNodes["Node{0}".format(i)] = nodePath.attachNewNode(cNode)
-            self.ganNodes["Node{0}".format(i)].reparentTo(self.render)
+            self.ganNodes["Node{0}".format(i)].reparentTo(self.cam)
 
     def refreshCameraPosition(self, task):
         global positionArray
@@ -264,11 +280,13 @@ class ARScene(ShowBase):
                 temp = LVecBase3f(temp2[0], temp2[1], temp2[2])
                 array[0] = temp
                 quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
+                #print "Camera position " + str(array[0]) + " Quaternion " + str(quaternion)
                 self.cam.setPosQuat(array[0], quaternion)
         else:
             if not queueSlam.empty():
                 array = queueSlam.get()
                 quaternion = LQuaternion(array[1][0], array[1][1], array[1][2], array[1][3])
+                #print "Camera position non calibrated " + str(array[0]) + " Quaternion " + str(quaternion)
                 self.cam.setPosQuat(array[0], quaternion)
         return task.cont
 
@@ -277,26 +295,44 @@ class ARScene(ShowBase):
 
         if self.calibrator.ready:
             if not isObjectCreated:
-                self.ball = self.loader.loadModel("models/ball")
-                self.ball.reparentTo(self.render)
-                self.ball.setScale(0.15, 0.15, 0.15)
+                self.dice = self.loader.loadModel("models/Dice_Obj.obj")
+                tex = self.loader.loadTexture('models/Dice_Base_Color.png')
+                tex.setWrapV(Texture.WM_repeat)
+                self.dice.setTexture(tex, 2)
+                #self.ball = self.loader.loadModel("models/ball")
+                self.dice.reparentTo(self.render)
+                self.dice.setScale(0.15, 0.15, 0.15)
                 x = self.cam.getX()
                 y = self.cam.getY()
                 z = self.cam.getZ()
-                self.ball.setPos(x, y + 1.5, z)
 
-                self.ballSphere = self.ball.find("**/ball")
-                self.ballSphere.node().setFromCollideMask(BitMask32.bit(1))
-                self.ballSphere.node().setIntoCollideMask(BitMask32.allOff())
-                self.ballSphere.show()
+                if self.surface_box is not None:
+                    self.dice.setPos(self.surface_box.getPos())
+                    self.dice.setZ(self.surface_box.getZ() + (self.surface_box.getSz() + self.dice.getSz()) / 2)
+                #elif objectDetect is True:
+                else:
+                    self.dice.setPos(x, y + 3.5, z)
 
-                self.cTrav.addCollider(self.ballSphere, self.pusher)
+                cNode = CollisionNode("DiceNode")
+                # cNode.addSolid(CollisionPlane(Plane(Vec3(0, 0, 1), Point3(1000, 2, 3))))
+                cNode.addSolid(CollisionBox(self.dice.getPos(), 0.15, 0.15, 0.15))
+                nodePath = NodePath("NodePathDice")
+                self.dice_colision = nodePath.attachNewNode(cNode)
+                # self.colision_plane.setTexture(tex, 1)
+                # self.colision_plane.setColor(0.25, 0.5, 1.5, 1)
+                self.dice_colision.reparentTo(self.render)
+                #self.ballSphere = self.ball.find("**/ball")
+                self.dice_colision.node().setFromCollideMask(BitMask32.bit(1))
+                self.dice_colision.node().setIntoCollideMask(BitMask32.allOff())
+                #self.dice_colision.show()
 
-                self.pusher.addCollider(self.ballSphere, self.ball, self.drive.node())
+                self.cTrav.addCollider(self.dice_colision, self.pusher)
+
+                self.pusher.addCollider(self.dice_colision, self.dice, self.drive.node())
                 self.cTrav.showCollisions(self.render)
 
                 isObjectCreated = True
-                print "Object added at x = " + str(self.ball.getX()) + " y = " + str(self.ball.getY()) + " z = " + str(self.ball.getX())
+                print "Object added at x = " + str(self.dice.getX()) + " y = " + str(self.dice.getY()) + " z = " + str(self.dice.getX())
 
     def startCalibration(self):
         x = self.cam.getX()
@@ -346,8 +382,8 @@ class ARScene(ShowBase):
         non_zero_points = list()
 
         for i in range(4):
-            ponto = self.calibrator.convertSlamToWorld(points[i][0], points[i][1], points[i][2])
-            print 'WORLD Ponto' + str(i) + ' = ' + str(ponto)
+            ponto = self.calibrator.convertSlamToWorld(points[i][0], points[i][1], -points[i][2])
+            #print 'WORLD Ponto' + str(i) + ' = ' + str(ponto)
 
             if not (points[i][0] == points[i][1] and points[i][1] == points[i][2]):
                 non_zero_points.append(points[i])
@@ -360,11 +396,11 @@ class ARScene(ShowBase):
     def set_grid(self, points):
         points = np.transpose(points)
         points_mean = np.mean(points, 1)
-        points_mean_world = self.calibrator.convertSlamToWorld(points_mean[0], points_mean[1], points_mean[2])
+        points_mean_world = self.calibrator.convertSlamToWorld(points_mean[0], points_mean[1], -points_mean[2])
 
         x, y, z = points_mean_world[0], points_mean_world[1], points_mean_world[2]
         print "WORLD colocando em x: " + str(x) + " y: " + str(y) + " z: " + str(z)
-        dx, dy, dz = 0.3, 0.3, 0.1
+        dx, dy, dz = 1, 1, 0.01
 
         print "Coordenadas Camera: " + str(self.cam.getPos()) + "\n"
         ponto = [self.cam.getX() * self.calibrator.converted, self.cam.getY() * self.calibrator.converted,
@@ -378,6 +414,8 @@ class ARScene(ShowBase):
         self.surface_box.setTexture(tex, 2)
         self.surface_box.setPos(x, y, z - (dz))
         self.surface_box.setScale(dx, dy, dz)
+        print "Quaternio do plano" + str(self.surface_box.getQuat())
+        #self.surface_box.setQuat(self.cam.getQuat())
 
         cNode = CollisionNode("SurfaceNode")
         cNode.addSolid(CollisionBox(LPoint3f(x, y, z - (dz)), dx, dy, dz))
