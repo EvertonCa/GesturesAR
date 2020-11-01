@@ -11,13 +11,13 @@ class DistanceCalibrator(object):
     #Set Slam start 3D point
     def setStart(self, x, y, z):
         self.start = [float(x), float(y), float(z)]
-        print str(self.start) + " --------------------------------------------------------- "
+        print "Calibration start at: " + str(self.start)
 
     #Set Slam end 3D point
     def setEnd(self, x, y, z):
         self.end = [float(x), float(y), float(z)]
         self.calibrate()
-        print str(self.end) + " --------------------------------------------------------- "
+        print "Calibration end at: " + str(self.end)
 
     #Set Converted
     #def setConverted(self, value):
@@ -29,6 +29,7 @@ class DistanceCalibrator(object):
         #if self.start != None and self.end != None:
         #euclidean distance between 2 3d points
         self.converted = np.sqrt((np.power(self.end[0] - self.start[0], 2)) + (np.power(self.end[1] - self.start[1], 2)) + (np.power(self.end[2] - self.start[2], 2)))
+        self.converted /= 25.4
         self.ready = True
         #distance between 2 2D points
         #self.Converted = np.sqrt((np.power(self.end[0] - self.start[0], 2))+(np.power(self.end[1] - self.start[1], 2)))

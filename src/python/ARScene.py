@@ -13,6 +13,9 @@ from threading import Thread
 from subprocess import Popen
 import os
 import numpy as np
+import time
+
+METER = 25.4
 
 loadPrcFileData("", "textures-power-2 none")  #the webcam feed can not be made into a power of two texture
 #loadPrcFileData("", "show-frame-rate-meter 1") #show fps
@@ -39,6 +42,9 @@ actualGanJoint = 0
 
 yoloBB = ""
 plane = ""
+
+objectsize = [[0.30, 0.306640625, 0.26432291666666666666666666666667], [0.30, 0.2197265625, 0.375], [0.30, 0.228515625, 0.19661458333333333333333333333333], [0.40, 0.6328125, 58072916666666666666666666666667], [0.40, 0.384765625, 0.16015625]]
+proportion_pixel2cm = [0.384765625, 0.185]
 
 queueSlam = Queue()
 queueSlamCalibrated = Queue()
@@ -117,9 +123,9 @@ def updateHands(text):
                 a = float(xt)
                 b = float(yt)
                 c = float(zt)
-                x = -(a / 600)
-                y = (c / 50)
-                z = (b / 600)
+                x = -(a / 1000)
+                y = (c / 100)
+                z = (b / 1000)
                 vector3f = LVecBase3f(x, y, z)
                 ganPositionArray.append(vector3f)
                 queueHands.put(vector3f)
@@ -135,6 +141,14 @@ class ARScene(ShowBase):
         self.palm = None
 
         self.cleanQueue = False
+
+        self.label_yolo = {
+            'Dualshock4': 0,
+            'IamGroot': 1,
+            'MiniCraque': 2,
+            'PlayStation2': 3,
+            'Carrinho': 4
+        }
 
         self.calibrator = DistanceCalibrator()
 
@@ -241,8 +255,8 @@ class ARScene(ShowBase):
                     if i == 0 or i == 2 or i == 5 or i == 17:
                         fist_list.append(calibratedVector3f)
 
-                    if i == 8:
-                        print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
+                    #if i == 4 or i == 20 or i == 12:
+                        #print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
 
                 if self.palm is not None:
                     self.palm.removeNode()
@@ -254,16 +268,18 @@ class ARScene(ShowBase):
                 self.palm.reparentTo(self.cam)
                 self.palm.show()
 
-                print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
+                #print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
         return task.cont
 
     def setGanNodes(self):
         for i in range(21):
             cNode = CollisionNode("GanNode" + str(i))
-            cNode.addSolid(CollisionSphere(0, 0, 0, 0.02))
+            cNode.addSolid(CollisionSphere(0, 0, 0, 0.005))
             nodePath = NodePath("NodePath{0}".format(i))
+            self.temp = self.render.attachNewNode("temp")
+            self.temp.setPos(self.cam.getPos())
             self.ganNodes["Node{0}".format(i)] = nodePath.attachNewNode(cNode)
-            self.ganNodes["Node{0}".format(i)].reparentTo(self.cam)
+            self.ganNodes["Node{0}".format(i)].reparentTo(self.temp)
 
     def refreshCameraPosition(self, task):
         global positionArray
@@ -299,9 +315,9 @@ class ARScene(ShowBase):
                 tex = self.loader.loadTexture('models/Dice_Base_Color.png')
                 tex.setWrapV(Texture.WM_repeat)
                 self.dice.setTexture(tex, 2)
-                #self.ball = self.loader.loadModel("models/ball")
+
                 self.dice.reparentTo(self.render)
-                self.dice.setScale(0.15, 0.15, 0.15)
+                self.dice.setScale(2, 2, 2)
                 x = self.cam.getX()
                 y = self.cam.getY()
                 z = self.cam.getZ()
@@ -313,22 +329,17 @@ class ARScene(ShowBase):
                 else:
                     self.dice.setPos(x, y + 3.5, z)
 
-                cNode = CollisionNode("DiceNode")
-                # cNode.addSolid(CollisionPlane(Plane(Vec3(0, 0, 1), Point3(1000, 2, 3))))
-                cNode.addSolid(CollisionBox(self.dice.getPos(), 0.15, 0.15, 0.15))
-                nodePath = NodePath("NodePathDice")
-                self.dice_colision = nodePath.attachNewNode(cNode)
-                # self.colision_plane.setTexture(tex, 1)
-                # self.colision_plane.setColor(0.25, 0.5, 1.5, 1)
-                self.dice_colision.reparentTo(self.render)
-                #self.ballSphere = self.ball.find("**/ball")
-                self.dice_colision.node().setFromCollideMask(BitMask32.bit(1))
-                self.dice_colision.node().setIntoCollideMask(BitMask32.allOff())
-                #self.dice_colision.show()
+                #cNode = CollisionNode("DiceNode")
+                #cNode.addSolid(CollisionBox(self.dice.getPos(), 0.15, 0.15, 0.15))
+                #nodePath = NodePath("NodePathDice")
+                #self.dice_colision = nodePath.attachNewNode(cNode)
+                #self.dice_colision.reparentTo(self.render)
+                #self.dice_colision.node().setFromCollideMask(BitMask32.bit(1))
+                #self.dice_colision.node().setIntoCollideMask(BitMask32.allOff())
 
-                self.cTrav.addCollider(self.dice_colision, self.pusher)
+                #self.cTrav.addCollider(self.dice_colision, self.pusher)
 
-                self.pusher.addCollider(self.dice_colision, self.dice, self.drive.node())
+                #self.pusher.addCollider(self.dice_colision, self.dice, self.drive.node())
                 self.cTrav.showCollisions(self.render)
 
                 isObjectCreated = True
@@ -340,7 +351,6 @@ class ARScene(ShowBase):
         z = self.cam.getZ()
 
         self.calibrator.setStart(x, y, z)
-        print "Calibration started"
 
     def endCalibration(self):
         global calibrated
@@ -354,7 +364,6 @@ class ARScene(ShowBase):
         # sends the right dimensions to slam
         send_factor_to_slam(self.calibrator.converted)
         calibrated = True
-        print "Calibration Finished"
 
     def detect_object(self):
         global canUpdateYOLO
@@ -365,11 +374,105 @@ class ARScene(ShowBase):
         marker_thread = Thread(target=object_detection, args=(yoloBB, ))
         marker_thread.start()
         marker_thread.join()
+        yolo_output = yoloBB.replace('\t', '').replace('Object Detected: ', '').replace('(center_x:', '').replace(
+            '  center_y: ', '').replace('  width: ', '').replace('  height: ', '').replace(')', '').replace('\n',
+                                                                                                            '').replace(
+            '%', '').replace(':', '')
+
+        yolo_parameters = yolo_output.split(' ')
+        label_number = self.label_yolo[yolo_parameters[0]]
+        object_distance = objectsize[label_number][0]*objectsize[label_number][2]/float(yolo_parameters[3])
+
+        distancia_do_centro = (float(yolo_parameters[2]) - 0.5)
+        x = proportion_pixel2cm[1] * distancia_do_centro / proportion_pixel2cm[0]
+
+        distancia_do_centro = (float(yolo_parameters[3]) - 0.5)
+        y = proportion_pixel2cm[1] * distancia_do_centro / proportion_pixel2cm[0]
+
+        temp = self.loader.loadModel("models/Dice_Obj.obj")
+        tex = self.loader.loadTexture('models/Dice_Base_Color.png')
+        tex.setWrapV(Texture.WM_repeat)
+        temp.setTexture(tex, 2)
+        temp.reparentTo(self.cam)
+        temp.setScale(0.15, 0.15, 0.15)
+        temp.setPos(x, object_distance, y)
+
+        worldPosition = temp.getPos(self.render)
+        worldQuat = temp.getQuat(self.render)
+
+        temp.reparentTo(self.render)
+        temp.setPos(worldPosition)
+        temp.setQuat(worldQuat)
+        print "Cubo em " + str(temp.getPos())
+        print 'camera em ' + str(self.cam.getPos())
+        print "Cubo em relacao camera " + str(temp.getPos(self.cam))
+
         canUpdateYOLO = True
         if os.path.exists('Marker/Marker.png'):
             markerCreated = True
 
     def set_plane(self):
+        grid_thread = Thread(target=self.set_grid, args=())
+        grid_thread.start()
+
+    def set_grid(self):
+        global plane
+        non_zero_points = list()
+
+        while len(non_zero_points) <= 2:
+            points = plane
+            if points == '':
+                return
+            points = points.split(' ')
+            points = list(map(float, points))
+            print "Pontos do plano SLAM: " + str(points)
+            points = np.reshape(points, [4, 3])
+
+            for i in range(4):
+                point_word = self.calibrator.convertSlamToWorld(points[i][0], points[i][2], -points[i][1])
+                print 'WORLD Ponto' + str(i) + ' = ' + str(point_word)
+
+                if not ((points[i][0] == points[i][1] and points[i][1] == points[i][2]) or
+                        (point_word in non_zero_points)):
+                    non_zero_points.append(point_word)
+            if len(non_zero_points) <= 2:
+                print "Insufficient points"
+                non_zero_points = list()
+                time.sleep(0.033)
+
+        non_zero_points = np.transpose(non_zero_points)
+        print non_zero_points
+        points_mean = np.mean(non_zero_points, 1)
+
+        x, y, z = points_mean[0], points_mean[1], points_mean[2]
+        print "Centro do plano colocado em x: " + str(x) + " y: " + str(y) + " z: " + str(z)
+        dx, dy, dz = 5, 5, 0.01
+
+        print "Coordenadas Camera: " + str(self.cam.getPos()) + "\n"
+
+        self.surface_box = self.loader.loadModel('models/cube.obj')
+        self.surface_box.reparentTo(self.render)
+        tex = self.loader.loadTexture('models/iron05.jpg')
+        tex.setWrapU(Texture.WM_repeat)
+        self.surface_box.setTexture(tex, 2)
+        self.surface_box.setPos(x, y, z - dz)
+        self.surface_box.setScale(dx, dy, dz)
+        print "Quaternio do plano" + str(self.surface_box.getQuat())
+        #self.surface_box.setQuat(self.cam.getQuat())
+
+        cNode = CollisionNode("SurfaceNode")
+        cNode.addSolid(CollisionBox(LPoint3f(x, y, z - dz), dx, dy, dz))
+        nodePath = NodePath("NodePath")
+        self.collision_surface = nodePath.attachNewNode(cNode)
+        self.collision_surface.reparentTo(self.render)
+
+    def imprime(self):
+        print 'Node0 ' + str(self.ganNodes['Node0'].getPos(self.render))
+        print 'Node4 ' + str(self.ganNodes['Node4'].getPos(self.render))
+        print 'Node12 ' + str(self.ganNodes['Node12'].getPos(self.render))
+        print 'Node20 ' + str(self.ganNodes['Node20'].getPos(self.render))
+
+    def showpoints(self):
         global plane
         points = plane
         if points == '':
@@ -382,46 +485,50 @@ class ARScene(ShowBase):
         non_zero_points = list()
 
         for i in range(4):
-            ponto = self.calibrator.convertSlamToWorld(points[i][0], points[i][1], -points[i][2])
-            #print 'WORLD Ponto' + str(i) + ' = ' + str(ponto)
+            ponto = self.calibrator.convertSlamToWorld(points[i][0], points[i][2], -points[i][1])
 
             if not (points[i][0] == points[i][1] and points[i][1] == points[i][2]):
-                non_zero_points.append(points[i])
+                non_zero_points.append(ponto)
 
-        if len(non_zero_points) > 2:
-            self.set_grid(non_zero_points)
-        else:
-            print "Insufficient points"
+        for j in non_zero_points:
+            temp = self.loader.loadModel("models/Dice_Obj.obj")
+            tex = self.loader.loadTexture('models/Dice_Base_Color.png')
+            tex.setWrapV(Texture.WM_repeat)
+            temp.setTexture(tex, 2)
+            temp.reparentTo(self.render)
+            temp.setScale(1, 1, 1)
+            temp.setPos(j[0], j[1], j[2])
+            print "Ponto em " + str(j)
+            print "Objeto vs mundo: " + str(temp.getPos())
+            print "Objeto vs camera: " + str(temp.getPos(self.cam))
+        print "Camera em " + str(self.cam.getPos())
 
-    def set_grid(self, points):
-        points = np.transpose(points)
-        points_mean = np.mean(points, 1)
-        points_mean_world = self.calibrator.convertSlamToWorld(points_mean[0], points_mean[1], -points_mean[2])
+        temp2 = self.loader.loadModel("models/Dice_Obj.obj")
+        tex = self.loader.loadTexture('models/Dice_Base_Color.png')
+        tex.setWrapV(Texture.WM_repeat)
+        temp2.setTexture(tex, 2)
+        temp2.reparentTo(self.cam)
+        temp2.setScale(1, 1, 1)
+        temp2.setPos(0, METER/2, 0)
+        positiontemp = temp2.getPos(self.render)
+        quattemp = temp2.getQuat(self.render)
+        temp2.reparentTo(self.render)
+        temp2.setPos(positiontemp)
+        temp2.setQuat(quattemp)
+        print "Temp object vs camera = " + str(temp2.getPos())
 
-        x, y, z = points_mean_world[0], points_mean_world[1], points_mean_world[2]
-        print "WORLD colocando em x: " + str(x) + " y: " + str(y) + " z: " + str(z)
-        dx, dy, dz = 1, 1, 0.01
-
-        print "Coordenadas Camera: " + str(self.cam.getPos()) + "\n"
-        ponto = [self.cam.getX() * self.calibrator.converted, self.cam.getY() * self.calibrator.converted,
-                 self.cam.getZ() * self.calibrator.converted]
-        print 'SLAM camera' + ' = ' + str(ponto)
-
-        self.surface_box = self.loader.loadModel('models/cube.obj')
-        self.surface_box.reparentTo(self.render)
-        tex = self.loader.loadTexture('models/iron05.jpg')
-        tex.setWrapU(Texture.WM_repeat)
-        self.surface_box.setTexture(tex, 2)
-        self.surface_box.setPos(x, y, z - (dz))
-        self.surface_box.setScale(dx, dy, dz)
-        print "Quaternio do plano" + str(self.surface_box.getQuat())
-        #self.surface_box.setQuat(self.cam.getQuat())
-
-        cNode = CollisionNode("SurfaceNode")
-        cNode.addSolid(CollisionBox(LPoint3f(x, y, z - (dz)), dx, dy, dz))
-        nodePath = NodePath("NodePath")
-        self.collision_surface = nodePath.attachNewNode(cNode)
-        self.collision_surface.reparentTo(self.render)
+    def upDice(self):
+        temp = self.temp.getY()
+        self.temp.setY(temp + 1)
+        self.imprime()
+    def downDice(self):
+        temp = self.temp.getY()
+        self.temp.setY(temp - 1)
+        self.imprime()
+    def rightDice(self):
+        temp = self.temp.getX()
+        self.temp.setX(temp + 1)
+        self.imprime()
 
     def defineKeys(self):
         self.accept('escape', sys.exit)
@@ -434,6 +541,10 @@ class ARScene(ShowBase):
         self.accept('7', self.activeAr)
         self.accept('8', self.detachObjetct)
         self.accept('9', self.set_plane)
+        self.accept('a', self.showpoints)
+        self.accept('w', self.upDice)
+        self.accept('s', self.downDice)
+        self.accept('d', self.rightDice)
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)
@@ -446,3 +557,7 @@ class ARScene(ShowBase):
         self.onekeyText = genLabelText("[7] - Active AR", 8, self)
         self.onekeyText = genLabelText("[8] - Detach object", 9, self)
         self.onekeyText = genLabelText("[9] - Set plane", 10, self)
+        self.onekeyText = genLabelText("[a] - Mostra pontos plano", 11, self)
+        self.onekeyText = genLabelText("[a] - Set plane", 12, self)
+        self.onekeyText = genLabelText("[a] - Set plane", 13, self)
+        self.onekeyText = genLabelText("[a] - Set plane", 14, self)
