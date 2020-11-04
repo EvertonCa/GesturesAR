@@ -43,8 +43,11 @@ actualGanJoint = 0
 yoloBB = ""
 plane = ""
 
-objectsize = [[0.30, 0.306640625, 0.26432291666666666666666666666667], [0.30, 0.2197265625, 0.375], [0.30, 0.228515625, 0.19661458333333333333333333333333], [0.40, 0.6328125, 58072916666666666666666666666667], [0.40, 0.384765625, 0.16015625]]
-proportion_pixel2cm = [0.384765625, 0.185]
+cam_resolution = [1280, 720]
+
+sizeimg_database = [2048, 1536]
+objectsize = [[0.40, 0.306640625, 0.26432291666666666666666666666667], [0.40, 0.2197265625, 0.375], [0.40, 0.228515625, 0.19661458333333333333333333333333], [0.40, 0.6328125, 58072916666666666666666666666667], [0.40, 0.51953125, 0.30729166666666666666666666666667]]
+proportion_bb2cm = [0.51953125, 0.30729166666666666666666666666667, 0.185, 0.06]
 
 queueSlam = Queue()
 queueSlamCalibrated = Queue()
@@ -120,12 +123,17 @@ def updateHands(text):
                 replace(']', '').replace('\n', '')
             if len(temp) > 2:
                 xt, yt, zt = temp.split(" ")
+                # Center of GanHands (493,y,-127)
                 a = float(xt)
                 b = float(yt)
                 c = float(zt)
-                x = -(a / 1000)
-                y = (c / 100)
-                z = (b / 1000)
+                if i == 8:
+                    print "Ponto " + str(i) + " puro: " + str(a) + " " + str(c) + " " + str(b)
+                x = -(a / 1000) * METER - 8
+                y = (c / 1000) * METER
+                z = (b / 1000) * METER + 5
+                if i == 8:
+                    print "Ponto " + str(i) + " convertido: " + str(x) + " " + str(y) + " " + str(z)
                 vector3f = LVecBase3f(x, y, z)
                 ganPositionArray.append(vector3f)
                 queueHands.put(vector3f)
@@ -252,8 +260,6 @@ class ARScene(ShowBase):
                     calibratedVector3f = LVecBase3f(x, y, z)
                     self.ganNodes["Node" + str(i)].setPos(calibratedVector3f)
                     self.ganNodes["Node" + str(i)].show()
-                    if i == 0 or i == 2 or i == 5 or i == 17:
-                        fist_list.append(calibratedVector3f)
 
                     #if i == 4 or i == 20 or i == 12:
                         #print("Coodenadas Nodo" + str(i) + "" + str(self.ganNodes["Node" + str(i)].getPos()) + "\n")
@@ -261,20 +267,23 @@ class ARScene(ShowBase):
                 if self.palm is not None:
                     self.palm.removeNode()
                 cNode = CollisionNode("PalmNode")
-                cNode.addSolid(CollisionPolygon(fist_list[0], fist_list[1], fist_list[2], fist_list[3]))
+                cNode.addSolid(CollisionPolygon(self.ganNodes["Node0"].getPos(self.render),
+                                                self.ganNodes["Node2"].getPos(self.render),
+                                                self.ganNodes["Node5"].getPos(self.render),
+                                                self.ganNodes["Node17"].getPos(self.render)))
 
                 nodePath = NodePath("NodePathpalm")
                 self.palm = nodePath.attachNewNode(cNode)
-                self.palm.reparentTo(self.cam)
+                self.palm.reparentTo(self.render)
                 self.palm.show()
 
-                #print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
+                print("Coordenadas Camera: " + str(self.cam.getPos()) + "\n")
         return task.cont
 
     def setGanNodes(self):
         for i in range(21):
             cNode = CollisionNode("GanNode" + str(i))
-            cNode.addSolid(CollisionSphere(0, 0, 0, 0.005))
+            cNode.addSolid(CollisionSphere(0, 0, 0, 0.1))
             nodePath = NodePath("NodePath{0}".format(i))
             self.temp = self.render.attachNewNode("temp")
             self.temp.setPos(self.cam.getPos())
@@ -325,7 +334,6 @@ class ARScene(ShowBase):
                 if self.surface_box is not None:
                     self.dice.setPos(self.surface_box.getPos())
                     self.dice.setZ(self.surface_box.getZ() + (self.surface_box.getSz() + self.dice.getSz()) / 2)
-                #elif objectDetect is True:
                 else:
                     self.dice.setPos(x, y + 3.5, z)
 
@@ -381,21 +389,25 @@ class ARScene(ShowBase):
 
         yolo_parameters = yolo_output.split(' ')
         label_number = self.label_yolo[yolo_parameters[0]]
-        object_distance = objectsize[label_number][0]*objectsize[label_number][2]/float(yolo_parameters[3])
+        y = objectsize[label_number][0]*objectsize[label_number][2]*sizeimg_database[1]/(float(yolo_parameters[3]) *
+                                                                                       sizeimg_database[1])
+        y *= METER*5
 
-        distancia_do_centro = (float(yolo_parameters[2]) - 0.5)
-        x = proportion_pixel2cm[1] * distancia_do_centro / proportion_pixel2cm[0]
+        distance_center = (float(yolo_parameters[2]) - 0.5)*sizeimg_database[0]
+        x = proportion_bb2cm[2] * distance_center / (proportion_bb2cm[0]*sizeimg_database[0])
+        x *= METER*5
 
-        distancia_do_centro = (float(yolo_parameters[3]) - 0.5)
-        y = proportion_pixel2cm[1] * distancia_do_centro / proportion_pixel2cm[0]
+        distance_center = (float(yolo_parameters[3]) - 0.5)*sizeimg_database[1]
+        z = proportion_bb2cm[3] * distance_center / (proportion_bb2cm[1]*sizeimg_database[1])
+        z *= METER*5
 
         temp = self.loader.loadModel("models/Dice_Obj.obj")
         tex = self.loader.loadTexture('models/Dice_Base_Color.png')
         tex.setWrapV(Texture.WM_repeat)
         temp.setTexture(tex, 2)
         temp.reparentTo(self.cam)
-        temp.setScale(0.15, 0.15, 0.15)
-        temp.setPos(x, object_distance, y)
+        temp.setScale(1, 1, 1)
+        temp.setPos(x, y, z)
 
         worldPosition = temp.getPos(self.render)
         worldQuat = temp.getQuat(self.render)
@@ -403,7 +415,7 @@ class ARScene(ShowBase):
         temp.reparentTo(self.render)
         temp.setPos(worldPosition)
         temp.setQuat(worldQuat)
-        print "Cubo em " + str(temp.getPos())
+        print "Cubo em metros = " + str([x/METER, y/METER, z/METER])
         print 'camera em ' + str(self.cam.getPos())
         print "Cubo em relacao camera " + str(temp.getPos(self.cam))
 
@@ -517,19 +529,6 @@ class ARScene(ShowBase):
         temp2.setQuat(quattemp)
         print "Temp object vs camera = " + str(temp2.getPos())
 
-    def upDice(self):
-        temp = self.temp.getY()
-        self.temp.setY(temp + 1)
-        self.imprime()
-    def downDice(self):
-        temp = self.temp.getY()
-        self.temp.setY(temp - 1)
-        self.imprime()
-    def rightDice(self):
-        temp = self.temp.getX()
-        self.temp.setX(temp + 1)
-        self.imprime()
-
     def defineKeys(self):
         self.accept('escape', sys.exit)
         self.accept('1', self.startSlam)
@@ -542,9 +541,6 @@ class ARScene(ShowBase):
         self.accept('8', self.detachObjetct)
         self.accept('9', self.set_plane)
         self.accept('a', self.showpoints)
-        self.accept('w', self.upDice)
-        self.accept('s', self.downDice)
-        self.accept('d', self.rightDice)
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)
@@ -558,6 +554,3 @@ class ARScene(ShowBase):
         self.onekeyText = genLabelText("[8] - Detach object", 9, self)
         self.onekeyText = genLabelText("[9] - Set plane", 10, self)
         self.onekeyText = genLabelText("[a] - Mostra pontos plano", 11, self)
-        self.onekeyText = genLabelText("[a] - Set plane", 12, self)
-        self.onekeyText = genLabelText("[a] - Set plane", 13, self)
-        self.onekeyText = genLabelText("[a] - Set plane", 14, self)
