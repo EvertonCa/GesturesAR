@@ -1,5 +1,6 @@
 import numpy as np
 
+
 # Object for convert positions in base of the distance between start and end be 1, meter in the case of our tests
 class DistanceCalibrator(object):
     def __init__(self):
