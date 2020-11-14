@@ -2,8 +2,8 @@ import sys
 from Queue import Queue
 from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import loadPrcFileData, CardMaker, MovieTexture, Point2, TextNode, CollisionTraverser, \
-    CollisionHandlerPusher, CollisionNode, LVecBase3f, LQuaternion, \
-    CollisionSphere, NodePath, Texture, CollisionBox, LPoint3f, CollisionTube
+    CollisionHandlerPusher, CollisionNode, LVecBase3f, LQuaternion, CollisionSphere, NodePath, Texture, CollisionBox, \
+    LPoint3f, CollisionTube, BitMask32
 from direct.showbase.ShowBase import ShowBase
 from panda3d.vision import WebcamVideo
 from DistanceCalibrator import DistanceCalibrator
@@ -17,6 +17,7 @@ from math import pi, sin
 from direct.interval.FunctionInterval import Func, Wait
 from direct.interval.LerpInterval import LerpFunc
 from direct.interval.MetaInterval import Sequence, Parallel
+from ObjectMeasurements import *
 
 METER = 25.4
 
@@ -34,12 +35,6 @@ calibrated = False
 
 yoloBB = ""
 plane = ""
-
-cam_resolution = [1280, 720]
-
-sizeimg_database = [2048, 1536]
-objectsize = [[0.40, 0.30322265625, 0.34548611111111111111111111111111], [0.40, 0.2236328125, 0.49652777777777777777777777777778], [0.40, 0.22998046875, 0.25520833333333333333333333333333], [0.40, 0.427734375, 1.0], [0.40, 0.51953125, 0.30729166666666666666666666666667]]
-proportion_bb2cm = [0.51953125, 0.30729166666666666666666666666667, 0.185, 0.06]
 
 queueSlam = Queue()
 queueSlamCalibrated = Queue()
@@ -169,7 +164,6 @@ class ARScene(ShowBase):
         self.ballSphere = self.axis.find("**/ball")
         self.ganNodes = {}
         self.setGanNodes()
-        self.modelandcollision = None
 
         self.ganCollisions = {}
         self.cilinder = {}
@@ -311,16 +305,24 @@ class ARScene(ShowBase):
                 if self.surface_box is not None:
                     pos = [self.surface_box.getX(), self.surface_box.getY(), self.surface_box.getZ() +
                            (self.surface_box.getSz() + 1.8*scale[2]) / 2]
+                    self.load_carrossel(pos, scale)
+                    self.setupLights()
+                    self.startCarousel()
+                    print self.carousel.getPos(self.render)
+                    print self.carousel.getPos(self.cam)
                 else:
                     pos = [x, y + 30, z]
+                    self.load_carrossel(pos, scale)
+                    self.setupLights()
+                    self.startCarousel()
+                    print self.carousel.getPos(self.render)
+                    print self.carousel.getPos(self.cam)
+                    #pos = [x, y + 30, z]
+                    #self.load_xbox(pos, scale)
+                    #print self.xbox.getPos(self.render)
+                    #print self.xbox.getPos(self.cam)
 
-                self.load_carrossel(pos, scale)
-                self.setupLights()
-                self.startCarousel()
-                print self.carousel.getPos(self.render)
-                print self.carousel.getPos(self.cam)
                 self.cTrav.showCollisions(self.render)
-
                 isObjectCreated = True
 
     # starts the calibration process to match SLAM to meters
@@ -394,8 +396,13 @@ class ARScene(ShowBase):
         grid_thread = Thread(target=self.set_grid, args=())
         grid_thread.start()
 
-    # creates the plane
-    def set_grid(self):
+    # sets the plane detection and creation thread with slam coordinates
+    def set_plane_slam(self):
+        grid_thread = Thread(target=self.get_slam_plane, args=())
+        grid_thread.start()
+
+    # get coordinates with variation in z small then 2 centimetres and take the average of measurements
+    def get_slam_plane(self):
         global plane
         non_zero_points = list()
 
@@ -425,6 +432,15 @@ class ARScene(ShowBase):
         points_mean = np.mean(non_zero_points, 1)
 
         x, y, z = points_mean[0], points_mean[1], points_mean[2]
+        self.set_grid(x, y, z)
+
+    # creates the plane
+    def set_grid(self, x=None, y=None, z=None):
+        if x is None:
+            x = self.cam.getX(self.render)
+            y = self.cam.getY(self.render) + 30
+            z = self.cam.getZ(self.render)
+
         print "Centro do plano colocado em x: " + str(x) + " y: " + str(y) + " z: " + str(z)
         dx, dy, dz = 8, 8, 0.01
 
@@ -432,7 +448,7 @@ class ARScene(ShowBase):
 
         self.surface_box = self.loader.loadModel('models/cube.obj')
         self.surface_box.reparentTo(self.render)
-        tex = self.loader.loadTexture('models/iron05.jpg')
+        tex = self.loader.loadTexture('models/Gravel_diffuse.jpg')
         tex.setWrapU(Texture.WM_repeat)
         self.surface_box.setTexture(tex, 2)
         self.surface_box.setPos(x, y, z - dz)
