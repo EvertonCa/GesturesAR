@@ -162,11 +162,16 @@ class ARScene(ShowBase):
         # variables for the system
         self.axis = self.loader.loadModel("models/ball")
         self.ballSphere = self.axis.find("**/ball")
+
+        self.pipeline = None
+        self.pipelineHands = None
+        self.setupLightsModels()
+        self.modelandcollision = None
         self.ganNodes = {}
         self.setGanNodes()
 
         self.ganCollisions = {}
-        self.cilinder = {}
+        self.cylinder = {}
         self.define_capsule_collision()
         self.define_cylinders()
 
@@ -219,12 +224,12 @@ class ARScene(ShowBase):
         if i == 0:
             return
         elif i % 4 == 1:
-            self.cilinder["Cilinder{0}".format(i)].setPos(
+            self.cylinder["Cylinder{0}".format(i)].setPos(
                 (self.ganNodes["Node{0}".format(0)].getPos() - self.ganNodes["Node{0}".format(i)].getPos()) / 2)
             p1 = (self.ganNodes["Node{0}".format(0)].getX(), self.ganNodes["Node{0}".format(0)].getY(),
                   self.ganNodes["Node{0}".format(0)].getZ())
         else:
-            self.cilinder["Cilinder{0}".format(i)].setPos(
+            self.cylinder["Cylinder{0}".format(i)].setPos(
                 (self.ganNodes["Node{0}".format(i - 1)].getPos() - self.ganNodes["Node{0}".format(i)].getPos()) / 2)
             p1 = (self.ganNodes["Node{0}".format(i - 1)].getX(), self.ganNodes["Node{0}".format(i - 1)].getY(),
                   self.ganNodes["Node{0}".format(i - 1)].getZ())
@@ -232,9 +237,9 @@ class ARScene(ShowBase):
         p2 = (self.ganNodes["Node{0}".format(i)].getX(), self.ganNodes["Node{0}".format(i)].getY(),
               self.ganNodes["Node{0}".format(i)].getZ())
         eudi = self.euclidean_distance(p1, p2)
-        self.cilinder["Cilinder{0}".format(i)].setScale((0.20, 0.20, eudi))
-        self.cilinder["Cilinder{0}".format(i)].lookAt(self.ganNodes["Node{0}".format(i)])
-        self.cilinder["Cilinder{0}".format(i)].setP(self.cilinder["Cilinder{0}".format(i)].getP() + 90)
+        self.cylinder["Cylinder{0}".format(i)].setScale((0.20, 0.20, eudi))
+        self.cylinder["Cylinder{0}".format(i)].lookAt(self.ganNodes["Node{0}".format(i)])
+        self.cylinder["Cylinder{0}".format(i)].setP(self.cylinder["Cylinder{0}".format(i)].getP() + 90)
 
     # returns the euclidean distance between start and end
     def euclidean_distance(self, start, end):
@@ -254,10 +259,10 @@ class ARScene(ShowBase):
     # defines the hand cylinders
     def define_cylinders(self):
         for i in range(1, 21):
-            self.cilinder["Cilinder{0}".format(i)] = self.loader.loadModel("models/cilindro")
-            self.cilinder["Cilinder{0}".format(i)].reparentTo(self.ganNodes["Node{0}".format(i)])
-            self.cilinder["Cilinder{0}".format(i)].setScale(0.25, 0.25, 0.25)
-            self.cilinder["Cilinder{0}".format(i)].setPos(0, 0, 0)
+            self.cylinder["Cylinder{0}".format(i)] = self.loader.loadModel("models/cylinder")
+            self.cylinder["Cylinder{0}".format(i)].reparentTo(self.ganNodes["Node{0}".format(i)])
+            self.cylinder["Cylinder{0}".format(i)].setScale(0.25, 0.25, 0.25)
+            self.cylinder["Cylinder{0}".format(i)].setPos(0, 0, 0)
 
     # sets the hand nodes
     def setGanNodes(self):
@@ -266,7 +271,7 @@ class ARScene(ShowBase):
             cNode.addSolid(CollisionSphere(0, 0, 0, 0.1))
             nodePath = NodePath("NodePath{0}".format(i))
             self.ganNodes["Node{0}".format(i)] = nodePath.attachNewNode(cNode)
-            self.ganNodes["Node{0}".format(i)].reparentTo(self.cam)
+            self.ganNodes["Node{0}".format(i)].reparentTo(self.pipelineHands)
 
     # refreshes the camera position based on the SLAM coordinates
     def refreshCameraPosition(self, task):
@@ -311,16 +316,16 @@ class ARScene(ShowBase):
                     print self.carousel.getPos(self.render)
                     print self.carousel.getPos(self.cam)
                 else:
+                    # pos = [x, y + 30, z]
+                    # self.load_carrossel(pos, scale)
+                    # self.setupLights()
+                    # self.startCarousel()
+                    # print self.carousel.getPos(self.render)
+                    # print self.carousel.getPos(self.cam)
                     pos = [x, y + 30, z]
-                    self.load_carrossel(pos, scale)
-                    self.setupLights()
-                    self.startCarousel()
-                    print self.carousel.getPos(self.render)
-                    print self.carousel.getPos(self.cam)
-                    #pos = [x, y + 30, z]
-                    #self.load_xbox(pos, scale)
-                    #print self.xbox.getPos(self.render)
-                    #print self.xbox.getPos(self.cam)
+                    self.load_PS5(pos, scale)
+                    print self.PS5.getPos(self.render)
+                    print self.PS5.getPos(self.cam)
 
                 self.cTrav.showCollisions(self.render)
                 isObjectCreated = True
@@ -346,6 +351,11 @@ class ARScene(ShowBase):
         # sends the right dimensions to slam
         send_factor_to_slam(self.calibrator.converted)
         calibrated = True
+
+    # open thread for initial position using object detection
+    def thread_detect_object(self):
+        object_thread = Thread(target=self.detect_object, args=())
+        object_thread.start()
 
     # detects the real object and places the virtual object relative to the real one
     def detect_object(self):
@@ -374,20 +384,32 @@ class ARScene(ShowBase):
         z = proportion_bb2cm[3] * distance_center / (proportion_bb2cm[1]*sizeimg_database[1])
         z *= METER * 5
 
-        temp = self.loader.loadModel("models/Dice_Obj.obj")
-        tex = self.loader.loadTexture('models/Dice_Base_Color.png')
-        tex.setWrapV(Texture.WM_repeat)
-        temp.setTexture(tex, 2)
-        temp.reparentTo(self.cam)
-        temp.setScale(1, 1, 1)
-        temp.setPos(x, y, z)
+        #temp = self.loader.loadModel("models/Dice_Obj.obj")
+        #tex = self.loader.loadTexture('models/Dice_Base_Color.png')
+        #tex.setWrapV(Texture.WM_repeat)
+        #temp.setTexture(tex, 2)
+        #temp.reparentTo(self.cam)
+        #temp.setScale(1, 1, 1)
+        #temp.setPos(x, y, z)
 
-        worldPosition = temp.getPos(self.render)
+        #worldPosition = temp.getPos(self.render)
+        #worldQuat = temp.getQuat(self.render)
+
+        #temp.reparentTo(self.render)
+        #temp.setPos(worldPosition)
+        #temp.setQuat(worldQuat)
+
+        temp = NodePath("NodePathWrenchAndCollision")
+        temp.reparentTo(self.cam)
+        temp.setPos(x, y, z)
+        x1 = temp.getX(self.render)
+        y1 = temp.getY(self.render)
+        z1 = temp.getZ(self.render)
         worldQuat = temp.getQuat(self.render)
 
-        temp.reparentTo(self.render)
-        temp.setPos(worldPosition)
-        temp.setQuat(worldQuat)
+        self.load_wrench([x1, y1, z1], [1, 1, 1])
+        self.rotate_model(self.wrench)
+        self.wrench.setQuat(worldQuat)
 
         canUpdateYOLO = True
 
@@ -460,6 +482,82 @@ class ARScene(ShowBase):
         self.collision_surface = nodePath.attachNewNode(cNode)
         self.collision_surface.reparentTo(self.render)
 
+    # loads the wrench model
+    def load_wrench(self, pos, scale):
+        self.modelandcollision = NodePath("NodePathWrenchAndCollision")
+        self.modelandcollision.setPos(pos[0], pos[1], pos[2])
+        self.modelandcollision.reparentTo(self.pipeline)
+        # Load screwdriver model
+        self.wrench = self.loader.loadModel("models/wrench")
+        # Apply scale and position transforms on the model.
+        self.wrench.setScale(scale[0], scale[1], scale[2])
+        #self.wrench.setP(90)
+        self.wrench.reparentTo(self.modelandcollision)
+        # this tells panda its a geom collision node
+        cNode = CollisionNode("WrenchCollisionNode")
+
+        for i in range(2, 40):
+            if i < 8:
+                for j in range(-3, 4):
+                    cNode.addSolid(CollisionSphere(0, j * 0.1, self.wrench.getZ() + (i * 0.1), 0.22))
+            elif i > 32:
+                for j in range(-3, 4):
+                    cNode.addSolid(CollisionSphere(0, j * 0.1, self.wrench.getZ() + (i * 0.1), 0.22))
+            else:
+                cNode.addSolid(CollisionSphere(0, 0, self.wrench.getZ() + (i * 0.1), 0.22))
+
+        wrenchCollision = self.wrench.attachNewNode(cNode)
+        wrenchCollision.reparentTo(self.render)
+        #wrenchCollision.show()
+        self.cTrav.addCollider(wrenchCollision, self.pusher)
+        self.pusher.addCollider(wrenchCollision, self.wrench, self.drive.node())
+
+    #loads the screwdriver model
+    def load_screwdriver(self, pos, scale):
+        self.modelandcollision = NodePath("NodePathScrewdriverAndCollision")
+        self.modelandcollision.setPos(pos[0], pos[1], pos[2])
+        self.modelandcollision.reparentTo(self.pipeline)
+        # Load screwdriver model
+        self.screwdriver = self.loader.loadModel("models/screwdriver")
+        # Apply scale and position transforms on the model.
+        self.screwdriver.setScale(scale[0], scale[1], scale[2])
+        self.screwdriver.reparentTo(self.modelandcollision)
+
+        # set CollisionSpheres
+        cNode = CollisionNode("ScrewdriverCollisionNode")
+
+        for i in range(1, 30):
+            if i < 13:
+                cNode.addSolid(CollisionSphere(0, 0, self.screwdriver.getZ() + (i * 0.1), 0.25))
+            else:
+                cNode.addSolid(CollisionSphere(0, 0, self.screwdriver.getZ() + (i * 0.1), 0.10))
+
+        screwdriverCollision = self.screwdriver.attachNewNode(cNode)
+        self.cTrav.addCollider(screwdriverCollision, self.pusher)
+        self.pusher.addCollider(screwdriverCollision, self.screwdriver, self.drive.node())
+
+    #loads the PS5 model
+    def load_PS5(self, pos, scale):
+        self.modelandcollision = NodePath("NodePathPS5AndCollision")
+        self.modelandcollision.setPos(pos[0], pos[1], pos[2])
+        self.modelandcollision.reparentTo(self.pipeline)
+        # Load the PS5 model
+        self.PS5 = self.loader.loadModel("models/PS5")
+        # Apply scale and position transforms on the model.
+        self.PS5.setScale(scale[0], scale[1], scale[2])
+        self.PS5.reparentTo(self.modelandcollision)
+        # this tells panda its a geom collision node
+        # set CollisionSpheres
+        cNode = CollisionNode("PS5CollisionNode")
+
+        for i in range(-9, 10):
+            for j in range(1, 26):
+                cNode.addSolid(CollisionSphere(i * 0.1, 0, self.PS5.getZ() + (j * 0.1), 0.25))
+
+        PS5Collision = self.PS5.attachNewNode(cNode)
+        self.cTrav.addCollider(PS5Collision, self.pusher)
+        self.pusher.addCollider(PS5Collision, self.PS5, self.drive.node())
+
     # loads the carrousel model
     def load_carrossel(self, pos, scale):
         self.modelandcollision = NodePath("NodePathCarouselAndCollision")
@@ -509,6 +607,28 @@ class ARScene(ShowBase):
         self.render.setLight(self.render.attachNewNode(directionalLight))
         self.render.setLight(self.render.attachNewNode(ambientLight))
 
+    # enable the lights for the models
+    def setupLightsModels(self):
+        # pipeline for ambient light to see models materials
+        self.pipeline = NodePath("NodePathIllumination")
+        self.pipeline.reparentTo(self.render)
+        alight = AmbientLight("alight")
+        alight.setColor((1, 1, 1, 1))
+        alnp = self.render.attachNewNode(alight)
+        self.pipeline.setLight(alnp)
+
+        # pipeline for ambient light to see models materials on Hands, because hands is attach to camera
+        self.pipelineHands = NodePath("NodePathIlluminationHands")
+        self.pipelineHands.reparentTo(self.cam)
+        alnpHands = self.cam.attachNewNode(alight)
+        self.pipelineHands.setLight(alnpHands)
+
+    # start model
+    def rotate_model(self, obj):
+        self.spin = obj.hprInterval(20, LVector3(360, 0, 0))
+
+        self.spin.loop()
+
     # starts the animation for the carrousel model
     def startCarousel(self):
         self.carouselSpin = self.carousel.hprInterval(20, LVector3(360, 0, 0))
@@ -549,7 +669,7 @@ class ARScene(ShowBase):
         self.accept('2', self.endCalibration)
         self.accept('3', self.spawnObject)
         self.accept('4', self.initHands)
-        self.accept('5', self.detect_object)
+        self.accept('5', self.thread_detect_object)
         self.accept('6', self.set_plane)
 
     def generateText(self):
