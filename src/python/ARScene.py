@@ -407,10 +407,14 @@ class ARScene(ShowBase):
         z1 = temp.getZ(self.render)
         worldQuat = temp.getQuat(self.render)
 
+        #self.load_carrossel([x1, y1, z1], [1, 1, 1])
+        #self.setupLights()
+        #self.startCarousel()
         self.load_wrench([x1, y1, z1], [1, 1, 1])
         self.rotate_model(self.wrench)
         self.wrench.setQuat(worldQuat)
 
+        self.cTrav.showCollisions(self.render)
         canUpdateYOLO = True
 
     # sets the plane detection and creation thread
@@ -460,8 +464,8 @@ class ARScene(ShowBase):
     def set_grid(self, x=None, y=None, z=None):
         if x is None:
             x = self.cam.getX(self.render)
-            y = self.cam.getY(self.render) + 30
-            z = self.cam.getZ(self.render)
+            y = self.cam.getY(self.render) + 50
+            z = self.cam.getZ(self.render) - 20
 
         print "Centro do plano colocado em x: " + str(x) + " y: " + str(y) + " z: " + str(z)
         dx, dy, dz = 8, 8, 0.01
@@ -496,18 +500,10 @@ class ARScene(ShowBase):
         # this tells panda its a geom collision node
         cNode = CollisionNode("WrenchCollisionNode")
 
-        for i in range(2, 40):
-            if i < 8:
-                for j in range(-3, 4):
-                    cNode.addSolid(CollisionSphere(0, j * 0.1, self.wrench.getZ() + (i * 0.1), 0.22))
-            elif i > 32:
-                for j in range(-3, 4):
-                    cNode.addSolid(CollisionSphere(0, j * 0.1, self.wrench.getZ() + (i * 0.1), 0.22))
-            else:
-                cNode.addSolid(CollisionSphere(0, 0, self.wrench.getZ() + (i * 0.1), 0.22))
+        cNode.addSolid(CollisionSphere(0, 0, 0, 0.45))
 
         wrenchCollision = self.wrench.attachNewNode(cNode)
-        wrenchCollision.reparentTo(self.render)
+        wrenchCollision.reparentTo(self.wrench)
         #wrenchCollision.show()
         self.cTrav.addCollider(wrenchCollision, self.pusher)
         self.pusher.addCollider(wrenchCollision, self.wrench, self.drive.node())
@@ -670,7 +666,7 @@ class ARScene(ShowBase):
         self.accept('3', self.spawnObject)
         self.accept('4', self.initHands)
         self.accept('5', self.thread_detect_object)
-        self.accept('6', self.set_plane)
+        self.accept('6', self.set_plane_slam)
 
     def generateText(self):
         self.onekeyText = genLabelText("ESC: Sair", 1, self)

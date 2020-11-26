@@ -6,7 +6,7 @@ echo 0112358 | sudo -S modprobe -r v4l2loopback
 
 echo 0112358 | sudo -S modprobe v4l2loopback devices=3 video_nr=3,91,92 exclusive_caps=0,0,1
 
-gnome-terminal -- bash -c 'gst-launch-1.0 souphttpsrc location=http://192.168.0.129:8081/video user-id=admin user-pw=admin ! jpegdec ! videoconvert ! v4l2sink device=/dev/video91; sleep 100'
+gnome-terminal -- bash -c 'gst-launch-1.0 souphttpsrc location=http://192.168.15.21:8081/video user-id=admin user-pw=admin ! jpegdec ! videoconvert ! v4l2sink device=/dev/video91; sleep 100'
 
 sleep 3
 
